@@ -70,7 +70,7 @@ class BeFake:
         self.refreshToken = res["refresh_token"]
         self.expiration = pendulum.now().add(seconds=int(res["expires_in"]))
 
-    def get_friend_feed(self):
+    def get_friends_feed(self):
         res = self.client.get(
             "https://mobile.bereal.com/api/feeds/friends",
             headers={
