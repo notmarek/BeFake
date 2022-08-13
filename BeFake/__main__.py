@@ -53,11 +53,7 @@ def feed(feed_id):
     if feed_id == "friends":
         feed = bf.get_friends_feed()
         try:
-            os.mkdir("feeds")
-        except:
-            pass
-        try:
-            os.mkdir("feeds/friends")
+            os.makedirs("feeds/friends")
         except:
             pass
         try:
@@ -70,12 +66,7 @@ def feed(feed_id):
             f.write(json.dumps(old_feed + feed))
         for item in feed:
             try:
-                os.mkdir("feeds/friends/" + item["user"]["username"])
-            except:
-                pass
-
-            try:
-                os.mkdir("feeds/friends/" + item["user"]["username"] + "/" + item["id"])
+                os.makedirs("feeds/friends/" + item["user"]["username"] + "/" + item["id"])
             except:
                 pass
 
@@ -108,6 +99,30 @@ def feed(feed_id):
                 "wb",
             ) as f:
                 f.write(secondary)
+            for emoji in item["realMojis"]:
+                try:
+                    os.makedirs("feeds/friends/"
+                    + item["user"]["username"]
+                    + "/"
+                    + item["id"]
+                    + "/reactions/"
+                    + emoji["type"])
+                except:
+                    pass
+                
+                with open(
+                    "feeds/friends/"
+                    + item["user"]["username"]
+                    + "/"
+                    + item["id"]
+                    + "/reactions/"
+                    + emoji["type"]
+                    + "/"
+                    + emoji["userName"]
+                    + ".jpg",
+                    "wb",
+                ) as f:
+                    f.write(bf.client.get(emoji["uri"]).content)
 
     elif feed_id == "memories":
         raise Exception("TODO")
