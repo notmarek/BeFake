@@ -63,7 +63,7 @@ def feed(feed_id):
             old_feed = []
 
         with open("feeds/friends.json", "w") as f:
-            f.write(json.dumps(old_feed + feed))
+            f.write(json.dumps(list(set(old_feed + feed))))
         for item in feed:
             try:
                 os.makedirs("feeds/friends/" + item["user"]["username"] + "/" + item["id"])
