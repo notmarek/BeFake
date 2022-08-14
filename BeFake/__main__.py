@@ -62,8 +62,21 @@ def feed(feed_id):
         except:
             old_feed = []
 
+        new_feed = []
+        for item in feed:
+            ogItem = next((x for x in old_feed if x["id"] == item["id"]), None)
+            if ogItem is not None:
+                ogItem.update(item)
+                new_feed.append(ogItem)
+            else:
+                new_feed.append(item)
+
+        for item in old_feed:
+            i = next((x for x in new_feed if x["id"] == item["id"]), None)
+            if i is None:
+                new_feed.append(item)
         with open("feeds/friends.json", "w") as f:
-            f.write(json.dumps(list(set(old_feed + feed))))
+            f.write(json.dumps(new_feed))
         for item in feed:
             try:
                 os.makedirs("feeds/friends/" + item["user"]["username"] + "/" + item["id"])
