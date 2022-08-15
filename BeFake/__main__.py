@@ -80,7 +80,9 @@ def feed(feed_id):
             f.write(json.dumps(new_feed))
         for item in feed:
             try:
-                os.makedirs("feeds/friends/" + item["user"]["username"] + "/" + item["id"])
+                os.makedirs(
+                    "feeds/friends/" + item["user"]["username"] + "/" + item["id"]
+                )
             except:
                 pass
 
@@ -115,15 +117,17 @@ def feed(feed_id):
                 f.write(secondary)
             for emoji in item["realMojis"]:
                 try:
-                    os.makedirs("feeds/friends/"
-                    + item["user"]["username"]
-                    + "/"
-                    + item["id"]
-                    + "/reactions/"
-                    + emoji["type"])
+                    os.makedirs(
+                        "feeds/friends/"
+                        + item["user"]["username"]
+                        + "/"
+                        + item["id"]
+                        + "/reactions/"
+                        + emoji["type"]
+                    )
                 except:
                     pass
-                
+
                 with open(
                     "feeds/friends/"
                     + item["user"]["username"]

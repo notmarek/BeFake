@@ -2,6 +2,7 @@ from base64 import b64decode
 import json
 import httpx
 import pendulum
+import hashlib
 
 
 class BeFake:
@@ -190,3 +191,22 @@ class BeFake:
 
     def get_received_friend_requests(self):
         return self.get_friend_requests("received")
+
+    def get_users_by_phone_number(self, phone_numbers):
+        hashed_phone_numbers = [
+            hashlib.sha256(phone_number.encode("utf-8")).hexdigest()
+            for phone_number in phone_numbers
+        ]
+        res = self.client.post(
+            f"{self.api_url}/relationships/contacts",
+            headers={
+                "authorization": self.token,
+            },
+            data={
+                "phoneNumbers": hashed_phone_numbers,
+            },
+        ).json()
+        return res
+
+    def get_user_by_phone_number(self, phone_number: str):
+        return self.get_users_by_phone_number([phone_number])[0]
