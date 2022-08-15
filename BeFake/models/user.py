@@ -1,10 +1,11 @@
 import pendulum
+from picture import Picture
 
 
 class User(object):
     """BeReal user object"""
 
-    def __init__(self, data_dict, befake):
+    def __init__(self, data_dict, befake) -> None:
         self.bf = befake
         self.id = data_dict.get("id", None)
         self.is_self = self.bf.user_id == self.id
@@ -30,9 +31,7 @@ class User(object):
         self.country_code = data_dict.get("countryCode", None)
         self.region = data_dict.get("region", None)
         self.created_at = data_dict.get("createdAt", None)
-        self.profile_picture = data_dict.get(
-            "profilePicture", None
-        )  # TODO: implement picture object
+        self.profile_picture = Picture(data_dict.get("profilePicture", None))
         self.friend_ship_status = data_dict.get("status", None)
         if self.created_at is not None:
             self.created_at = pendulum.parse(self.created_at)

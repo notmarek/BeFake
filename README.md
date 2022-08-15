@@ -3,8 +3,6 @@
  <img src="./assets/befake-black.png">
 </picture>
 
-# BeFake
-
 A cool tool for collecting all your friends photos from BeReal (including RealMojis) without taking any screenshots or even opening the app.
 
 
