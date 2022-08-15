@@ -1,5 +1,6 @@
-from user import User
-from picture import Picture
+from .user import User
+from .picture import Picture
+from .realmoji import RealMoji
 import pendulum
 
 
@@ -15,18 +16,19 @@ class Post(object):
         self.region = data_dict.get("region")
         self.bucket = data_dict.get("bucket")
         self.primary_photo = Picture(
-            None,
+            {},
             data_dict.get("photoURL", None),
             data_dict.get("imageWidth", None),
             data_dict.get("imageHeight", None),
         )
         self.secondary_photo = Picture(
-            None,
+            {},
             data_dict.get("secondaryPhotoURL", None),
             data_dict.get("secondaryImageHeight", None),
             data_dict.get("secondaryImageWidth", None),
         )
         self.late_in_seconds = data_dict.get("lateInSeconds", None)
+        self.caption = data_dict.get("caption", None)
         self.public = data_dict.get("isPublic", None)
         self.location = data_dict.get("location", None)  # TODO: location object?
         self.retakes = data_dict.get("retakeCounter", None)
@@ -44,7 +46,7 @@ class Post(object):
                 nanoseconds=self.taken_at["_nanoseconds"]
             )
         self.comment = data_dict.get("comment", None)  # TODO: figure out what this is
-        self.realmojis = data_dict.get("realMojis", None)  # TODO: Realmoji object
+        self.realmojis = [RealMoji(rm, befake) for rm in data_dict.get("realMojis", [])]
         self.screenshots = data_dict.get(
             "screenshots", None
         )  # TODO: figure out what this does
