@@ -167,7 +167,7 @@ class BeFake:
                 "authorization": self.token,
             },
         ).json()
-        return res
+        return [User(friend, self) for friend in res["data"]]
 
     def get_friend_suggestions(self):
         res = self.client.get(
@@ -176,7 +176,7 @@ class BeFake:
                 "authorization": self.token,
             },
         ).json()
-        return res
+        return [User(suggestion, self) for suggestion in res["data"]]
 
     def get_friend_requests(self, req_type: str):
         res = self.client.get(
@@ -185,7 +185,7 @@ class BeFake:
                 "authorization": self.token,
             },
         ).json()
-        return res
+        return [User(user, self) for user in res["data"]]
 
     def get_sent_friend_requests(self):
         return self.get_friend_requests("sent")
@@ -207,7 +207,7 @@ class BeFake:
                 "phoneNumbers": hashed_phone_numbers,
             },
         ).json()
-        return res
+        return [User(user, self) for user in res]
 
     def get_user_by_phone_number(self, phone_number: str):
         return self.get_users_by_phone_number([phone_number])[0]

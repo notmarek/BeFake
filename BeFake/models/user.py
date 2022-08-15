@@ -7,6 +7,9 @@ class User(object):
     def __init__(self, data_dict, befake):
         self.bf = befake
         self.id = data_dict.get("id", None)
+        self.is_self = self.bf.user_id == self.id
+        self.mutual_friends = data_dict.get("mutualFriends", None)
+        self.hashed_phone_number = data_dict.get("hashedPhoneNumber", None)
         self.username = data_dict.get("username", None)
         self.new_username = data_dict.get("newUsername", None)
         self.birth_date = data_dict.get("birthdate", None)
@@ -33,6 +36,15 @@ class User(object):
         self.friend_ship_status = data_dict.get("status", None)
         if self.created_at is not None:
             self.created_at = pendulum.parse(self.created_at)
+        self.updated_at = data_dict.get("updatedAt", None)
+        if self.updated_at is not None:
+            self.updated_at = pendulum.parse(self.updated_at)
 
     def __repr__(self) -> str:
         return f"<User {self.id}>"
+
+    def send_friend_request(self):
+        """Send a friend request to this user"""
+        if self.is_self:
+            raise ValueError("Cannot send friend request to self")
+        return self.bf.add_friend(self.id)
