@@ -23,6 +23,15 @@ def login(phone_number):
     print("You can now try to use the other commands ;)")
 
 
+@cli.command(help="Get info about your account")
+def me():
+    bf = BeFake()
+    bf.load("token.txt")
+    user = bf.get_user_info()
+    print(user)
+    print(user.__dict__)
+
+
 @cli.command(help="Refresh token")
 def refresh():
     bf = BeFake()

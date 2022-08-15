@@ -3,6 +3,7 @@ import json
 import httpx
 import pendulum
 import hashlib
+from models.user import User
 
 
 class BeFake:
@@ -90,7 +91,7 @@ class BeFake:
                 "authorization": self.token,
             },
         ).json()
-        return res
+        return User(res, self)
 
     def get_friends_feed(self):
         res = self.client.get(
