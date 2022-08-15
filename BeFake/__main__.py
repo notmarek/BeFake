@@ -31,6 +31,7 @@ def refresh():
     except:
         raise Exception("No token found, are you logged in?")
     bf.refresh_token()
+    print("New token: ", bf.token)
     bf.save("token.txt")
     print("Token refreshed.")
 
