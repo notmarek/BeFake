@@ -15,9 +15,7 @@ class RealMoji(object):
         self.photo = Picture({}, data_dict.get("uri"), None, None)
         self.date = data_dict.get("date", None)
         if self.date is not None:
-            self.date = pendulum.from_timestamp(self.date["_seconds"]).add(
-                nanoseconds=self.date["_nanoseconds"]
-            )
+            self.date = pendulum.from_timestamp(self.date["_seconds"])
 
     def __repr__(self) -> str:
         return f"<RealMoji {self.id}>"

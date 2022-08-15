@@ -53,7 +53,7 @@ def download_media(client: httpx.Client, item):
 
 
 @cli.command(help="Download a feed")
-@click.argument("feed_id", type=click.Choice(["friends", "memories"]))
+@click.argument("feed_id", type=click.Choice(["friends", "discovery"]))
 def feed(feed_id):
     bf = BeFake()
     try:
@@ -62,98 +62,41 @@ def feed(feed_id):
         raise Exception("No token found, are you logged in?")
     if feed_id == "friends":
         feed = bf.get_friends_feed()
-        try:
-            os.makedirs("feeds/friends")
-        except:
-            pass
-        try:
-            with open("feeds/friends.json", "r") as f:
-                old_feed = json.loads(f.read())
-        except:
-            old_feed = []
 
-        new_feed = []
-        for item in feed:
-            ogItem = next((x for x in old_feed if x["id"] == item["id"]), None)
-            if ogItem is not None:
-                ogItem.update(item)
-                new_feed.append(ogItem)
-            else:
-                new_feed.append(item)
+    elif feed_id == "discovery":
+        feed = bf.get_discovery_feed()
 
-        for item in old_feed:
-            i = next((x for x in new_feed if x["id"] == item["id"]), None)
-            if i is None:
-                new_feed.append(item)
-        with open("feeds/friends.json", "w") as f:
-            f.write(json.dumps(new_feed))
-        for item in feed:
-            try:
-                os.makedirs(
-                    "feeds/friends/" + item["user"]["username"] + "/" + item["id"]
-                )
-            except:
-                pass
+    os.makedirs(f"feeds/{feed_id}", exist_ok=True)
+    for item in feed:
+        os.makedirs(f"feeds/{feed_id}/{item.user.username}/{item.id}", exist_ok=True)
+
+        # with open(
+        #     f"feeds/{feed_id}/{item.user.username}/{item.id}/info.json",
+        #     "w",
+        # ) as f:
+        #     f.write(json.dumps(item))
+
+        with open(
+            f"feeds/{feed_id}/{item.user.username}/{item.id}/primary.jpg",
+            "wb",
+        ) as f:
+            f.write(item.primary_photo.download())
+        with open(
+            f"feeds/{feed_id}/{item.user.username}/{item.id}/secondary.jpg",
+            "wb",
+        ) as f:
+            f.write(item.secondary_photo.download())
+        for emoji in item.realmojis:
+            os.makedirs(
+                f"feeds/{feed_id}/{item.user.username}/{item.id}/reactions/{emoji.type}",
+                exist_ok=True,
+            )
 
             with open(
-                "feeds/friends/"
-                + item["user"]["username"]
-                + "/"
-                + item["id"]
-                + "/info.json",
-                "w",
-            ) as f:
-                f.write(json.dumps(item))
-
-            primary, secondary = download_media(bf.client, item)
-            with open(
-                "feeds/friends/"
-                + item["user"]["username"]
-                + "/"
-                + item["id"]
-                + "/primary.jpg",
+                f"feeds/{feed_id}/{item.user.username}/{item.id}/reactions/{emoji.type}/{emoji.username}.jpg",
                 "wb",
             ) as f:
-                f.write(primary)
-            with open(
-                "feeds/friends/"
-                + item["user"]["username"]
-                + "/"
-                + item["id"]
-                + "/secondary.jpg",
-                "wb",
-            ) as f:
-                f.write(secondary)
-            for emoji in item["realMojis"]:
-                try:
-                    os.makedirs(
-                        "feeds/friends/"
-                        + item["user"]["username"]
-                        + "/"
-                        + item["id"]
-                        + "/reactions/"
-                        + emoji["type"]
-                    )
-                except:
-                    pass
-
-                with open(
-                    "feeds/friends/"
-                    + item["user"]["username"]
-                    + "/"
-                    + item["id"]
-                    + "/reactions/"
-                    + emoji["type"]
-                    + "/"
-                    + emoji["userName"]
-                    + ".jpg",
-                    "wb",
-                ) as f:
-                    f.write(bf.client.get(emoji["uri"]).content)
-
-    elif feed_id == "memories":
-        raise Exception("TODO")
-        feed = bf.get_memories_feed()
+                f.write(emoji.photo.download())
 
 
 if __name__ == "__main__":

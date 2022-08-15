@@ -3,6 +3,9 @@ import json
 import httpx
 import pendulum
 import hashlib
+
+from models.post import Post
+from models.memory import Memory
 from models.user import User
 
 
@@ -100,7 +103,8 @@ class BeFake:
                 "authorization": self.token,
             },
         ).json()
-        return res
+        return [Post(p, self) for p in res]
+
 
     def get_discovery_feed(self):
         res = self.client.get(
@@ -109,7 +113,7 @@ class BeFake:
                 "authorization": self.token,
             },
         ).json()
-        return res
+        return [Post(p, self) for p in res["posts"]]
 
     def get_memories_feed(self):
         res = self.client.get(
@@ -118,7 +122,7 @@ class BeFake:
                 "authorization": self.token,
             },
         ).json()
-        return res
+        return [Memory(mem, self) for mem in res["data"]]
 
     def delete_memory(self, memory_id: str):
         res = self.client.delete(

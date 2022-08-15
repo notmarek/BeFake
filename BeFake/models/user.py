@@ -1,6 +1,5 @@
 import pendulum
 from .picture import Picture
-from .realmoji import RealMoji
 
 
 class User(object):
@@ -18,6 +17,7 @@ class User(object):
         if self.birth_date is not None:
             self.birth_date = pendulum.parse(self.birth_date)
         self.full_name = data_dict.get("fullname", None)
+        from .realmoji import RealMoji
         self.realmojis = [RealMoji(rm, befake) for rm in data_dict.get("realmojis", [])]
         self.terms = data_dict.get("terms", None)
         self.devices = data_dict.get("devices", None)  # TODO: implement device object
@@ -30,7 +30,7 @@ class User(object):
         self.country_code = data_dict.get("countryCode", None)
         self.region = data_dict.get("region", None)
         self.created_at = data_dict.get("createdAt", None)
-        self.profile_picture = Picture(data_dict.get("profilePicture", None))
+        self.profile_picture = Picture(data_dict.get("profilePicture", {}))
         self.friend_ship_status = data_dict.get("status", None)
         if self.created_at is not None:
             self.created_at = pendulum.parse(self.created_at)
