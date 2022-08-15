@@ -1,3 +1,7 @@
+<picture width="512" align="right">
+ <source media="(prefers-color-scheme: dark)" srcset="./assets/befake-white.png">
+ <img src="./assets/befake-black.png.png">
+</picture>
 
 # BeFake
 
