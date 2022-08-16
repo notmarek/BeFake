@@ -13,10 +13,14 @@ class BeFake:
     def __init__(
         self,
         refresh_token=None,
+        proxies=None,
+        disable_ssl=False,
         api_url="https://mobile.bereal.com/api",
         google_api_key="AIzaSyDwjfEeparokD7sXPVQli9NsTuhT6fJ6iA",
     ) -> None:
         self.client = httpx.Client(
+            proxies=proxies,
+            verify=not disable_ssl,
             headers={
                 "user-agent": "AlexisBarreyat.BeReal/0.23.2 iPhone/16.0 hw/iPhone13_2",
                 "x-ios-bundle-identifier": "AlexisBarreyat.BeReal",
@@ -104,7 +108,6 @@ class BeFake:
             },
         ).json()
         return [Post(p, self) for p in res]
-
 
     def get_discovery_feed(self):
         res = self.client.get(
