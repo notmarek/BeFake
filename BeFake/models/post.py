@@ -1,3 +1,4 @@
+from ..BeFake import BeFake
 from .user import User
 from .picture import Picture
 from .realmoji import RealMoji
@@ -52,3 +53,31 @@ class Post(object):
 
     def __repr__(self) -> str:
         return f"<Post {self.id}>"
+
+    def create(
+        self,
+        primary: bytes,
+        secondary: bytes,
+        caption="",
+        retakes=0,
+        taken_at=None,
+        location={"latitude": "37.2297175", "longitude": "-115.7911082"},
+        is_public=False,
+        is_late=False,
+    ):
+        res = self.bf.create_post(
+            primary, secondary, is_late, is_public, caption, location, retakes, taken_at
+        )
+        self.primary_photo = Picture(res["primary"])
+        self.secondary_photo = Picture(res["secondary"])
+        self.id = res.get("id", None)
+        self.late_in_seconds = res.get("lateInSeconds", None)
+        self.caption = res.get("caption", None)
+        self.creation_date = res.get("createdAt", None)
+        if self.creation_date is not None:
+            self.creation_date = pendulum.parse(self.creation_date)
+        self.taken_at = res.get("takenAt", None)
+        if self.taken_at is not None:
+            self.taken_at = pendulum.parse(self.taken_at)
+        self.location = res.get("location", None)
+        self.user = User(res.get("user", {}), self.bf)

@@ -3,6 +3,7 @@ import json
 import httpx
 import pendulum
 import hashlib
+from .models.picture import Picture
 
 from models.post import Post
 from models.memory import Memory
@@ -218,3 +219,48 @@ class BeFake:
 
     def get_user_by_phone_number(self, phone_number: str):
         return self.get_users_by_phone_number([phone_number])[0]
+
+    def create_post(
+        self,
+        primary: bytes,
+        secondary: bytes,
+        is_late: bool,
+        is_public: bool,
+        caption: str,
+        location,
+        retakes=0,
+        taken_at=None,
+    ):
+        if taken_at is None:
+            now = pendulum.now()
+        else:
+            now = taken_at
+        taken_at = f"{now.to_date_string}T{now.to_time_string()}Z"
+
+        primary_picture = Picture({})
+        primary_picture.upload(self, primary)
+        secondary_picture = Picture({})
+        secondary_picture.upload(self, secondary, True)
+
+        json_data = {
+            "isPublic": is_public,
+            "isLate": is_late,
+            "retakeCounter": retakes,
+            "takenAt": taken_at,
+            "location": location,
+            "caption": caption,
+            "backCamera": {
+                "bucket": "storage.bere.al",
+                "height": primary_picture.height,
+                "width": primary_picture.width,
+                "path": primary_picture.url.replace("https://storage.bere.al/", ""),
+            },
+            "frontCamera": {
+                "bucket": "storage.bere.al",
+                "height": secondary_picture.height,
+                "width": secondary_picture.width,
+                "path": secondary_picture.url.replace("https://storage.bere.al/", ""),
+            },
+        }
+        res = self.client.post(f"{self.api_url}/content/post", data=json_data)
+        return res.json()
