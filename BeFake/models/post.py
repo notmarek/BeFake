@@ -1,4 +1,4 @@
-from ..BeFake import BeFake
+#from ..BeFake import BeFake
 from .user import User
 from .picture import Picture
 from .realmoji import RealMoji
