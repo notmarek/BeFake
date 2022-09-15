@@ -3,7 +3,7 @@ import json
 import httpx
 import pendulum
 import hashlib
-from .models.picture import Picture
+from models.picture import Picture
 
 from models.post import Post
 from models.memory import Memory
