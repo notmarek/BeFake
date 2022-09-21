@@ -72,7 +72,7 @@ class BeFake:
         ).json()
 
         self.token = res["idToken"]
-        self.token_info = json.loads(b64decode(res["idToken"].split(".", 3)[1]))
+        self.token_info = json.loads(b64decode(res["idToken"].split(".")[1] + '=='))
         self.refresh_token = res["refreshToken"]
         self.expiration = pendulum.now().add(seconds=int(res["expiresIn"]))
         self.user_id = res["localId"]
@@ -87,7 +87,7 @@ class BeFake:
             data={"refresh_token": self.refresh_token, "grant_type": "refresh_token"},
         ).json()
         self.token = res["id_token"]
-        self.token_info = json.loads(b64decode(res["id_token"].split(".", 3)[1]))
+        self.token_info = json.loads(b64decode(res["id_token"].split(".")[1] + '=='))
         self.refresh_token = res["refresh_token"]
         self.expiration = pendulum.now().add(seconds=int(res["expires_in"]))
         self.user_id = res["user_id"]
