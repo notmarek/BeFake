@@ -32,7 +32,6 @@ class Picture(object):
         img_data = img_data.getvalue()
         if name is None:
             name = f"Photos/{befake.user_id}/bereal/{uuid.uuid4()}-{int(pendulum.now().timestamp())}{'-secondary' if secondary else ''}.webp"
-        print(name)
         json_data = {
             "cacheControl": "public,max-age=172800",
             "contentType": "image/webp",
