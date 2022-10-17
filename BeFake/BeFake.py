@@ -23,7 +23,7 @@ class BeFake:
             proxies=proxies,
             verify=not disable_ssl,
             headers={
-                "user-agent": "AlexisBarreyat.BeReal/0.23.2 iPhone/16.0 hw/iPhone13_2",
+                "user-agent": "AlexisBarreyat.BeReal/0.24.0 iPhone/16.0.2 hw/iPhone12_8 (GTMSUF/1)",
                 "x-ios-bundle-identifier": "AlexisBarreyat.BeReal",
             },
         )

@@ -31,19 +31,18 @@ class Picture(object):
         img.save(img_data, format="JPEG", quality=90)
         img_data = img_data.getvalue()
         if name is None:
-            name = f"Photos/{befake.user_id}/{uuid.uuid4}-{int(pendulum.now().timestamp())}{'-secondary' if secondary else ''}.jpg"
-
+            name = f"Photos/{befake.user_id}/bereal/{uuid.uuid4()}-{int(pendulum.now().timestamp())}{'-secondary' if secondary else ''}.webp"
         json_data = {
             "cacheControl": "public,max-age=172800",
-            "contentType": "image/jpeg",
+            "contentType": "image/webp",
             "metadata": {"type": "bereal"},
             "name": name,
         }
         headers = {
             "x-goog-upload-protocol": "resumable",
             "x-goog-upload-command": "start",
-            "x-firebase-storage-version": "ios/9.3.0",
-            "x-goog-upload-content-type": "image/jpeg",
+            "x-firebase-storage-version": "ios/9.4.0",
+            "x-goog-upload-content-type": "image/webp",
             "Authorization": f"Firebase {befake.token}",
             "x-goog-upload-content-length": str(len(img_data)),
             "content-type": "application/json",
