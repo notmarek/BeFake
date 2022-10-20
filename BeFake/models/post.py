@@ -55,9 +55,7 @@ class Post(object):
 
     def __repr__(self) -> str:
         return f"<Post {self.id}>"
-    
-    def toJSON(self):
-        return self.data_dict
+
 
     def create(
         self,

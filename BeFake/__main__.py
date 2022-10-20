@@ -77,7 +77,7 @@ def feed(feed_id):
             f"feeds/{feed_id}/{item.user.username}/{item.id}/info.json",
             "w+",
         ) as f:
-            f.write(json.dumps(item.toJSON(), indent=4))
+            f.write(json.dumps(item.data_dict, indent=4))
 
         with open(
             f"feeds/{feed_id}/{item.user.username}/{item.id}/primary.jpg",
