@@ -62,6 +62,9 @@ def feed(feed_id):
         raise Exception("No token found, are you logged in?")
     if feed_id == "friends":
         feed = bf.get_friends_feed()
+        print(feed)
+        for elem in feed:
+            print(elem.username, elem.location)
 
     elif feed_id == "discovery":
         feed = bf.get_discovery_feed()
@@ -70,11 +73,11 @@ def feed(feed_id):
     for item in feed:
         os.makedirs(f"feeds/{feed_id}/{item.user.username}/{item.id}", exist_ok=True)
 
-        # with open(
-        #     f"feeds/{feed_id}/{item.user.username}/{item.id}/info.json",
-        #     "w",
-        # ) as f:
-        #     f.write(json.dumps(item))
+        with open(
+            f"feeds/{feed_id}/{item.user.username}/{item.id}/info.json",
+            "w+",
+        ) as f:
+            f.write(json.dumps(item.toJSON(), indent=4))
 
         with open(
             f"feeds/{feed_id}/{item.user.username}/{item.id}/primary.jpg",
