@@ -10,6 +10,7 @@ class Memory(object):
         self.secondary_photo = Picture(data_dict.get("secondary", {}))
         self.is_late = data_dict.get("isLate", None)
         self.memory_day = data_dict.get("memoryDay", None)
+        self.data_dict = data_dict
 
     def __repr__(self) -> str:
         return f"<Memory {self.id}>"

@@ -1,10 +1,14 @@
 import json
 import os
 from BeFake import BeFake
+from utils import *
 
 import click
 import httpx
 
+import pendulum
+
+DATA_DIR = "data"
 
 @click.group()
 def cli():
@@ -62,45 +66,106 @@ def feed(feed_id):
         raise Exception("No token found, are you logged in?")
     if feed_id == "friends":
         feed = bf.get_friends_feed()
-        print(feed)
-        for elem in feed:
-            print(elem.username, elem.location)
 
     elif feed_id == "discovery":
         feed = bf.get_discovery_feed()
 
-    os.makedirs(f"feeds/{feed_id}", exist_ok=True)
+    os.makedirs(f"{DATA_DIR}/feeds/{feed_id}", exist_ok=True)
     for item in feed:
-        os.makedirs(f"feeds/{feed_id}/{item.user.username}/{item.id}", exist_ok=True)
+        os.makedirs(f"{DATA_DIR}/feeds/{feed_id}/{item.user.username}/{item.id}", exist_ok=True)
 
         with open(
-            f"feeds/{feed_id}/{item.user.username}/{item.id}/info.json",
+            f"{DATA_DIR}/feeds/{feed_id}/{item.user.username}/{item.id}/info.json",
             "w+",
         ) as f:
             f.write(json.dumps(item.data_dict, indent=4))
 
         with open(
-            f"feeds/{feed_id}/{item.user.username}/{item.id}/primary.jpg",
+            f"{DATA_DIR}/feeds/{feed_id}/{item.user.username}/{item.id}/primary.jpg",
             "wb",
         ) as f:
             f.write(item.primary_photo.download())
         with open(
-            f"feeds/{feed_id}/{item.user.username}/{item.id}/secondary.jpg",
+            f"{DATA_DIR}/feeds/{feed_id}/{item.user.username}/{item.id}/secondary.jpg",
             "wb",
         ) as f:
             f.write(item.secondary_photo.download())
         for emoji in item.realmojis:
             os.makedirs(
-                f"feeds/{feed_id}/{item.user.username}/{item.id}/reactions/{emoji.type}",
+                f"{DATA_DIR}/feeds/{feed_id}/{item.user.username}/{item.id}/reactions/{emoji.type}",
                 exist_ok=True,
             )
 
             with open(
-                f"feeds/{feed_id}/{item.user.username}/{item.id}/reactions/{emoji.type}/{emoji.username}.jpg",
+                f"{DATA_DIR}/feeds/{feed_id}/{item.user.username}/{item.id}/reactions/{emoji.type}/{emoji.username}.jpg",
                 "wb",
             ) as f:
                 f.write(emoji.photo.download())
 
+@cli.command(help="Download friends information")
+def parse_friends():
+    bf = BeFake()
+    try:
+        bf.load("token.txt")
+    except:
+        raise Exception("No token found, are you logged in?")
+    friends = bf.get_friends()
+    os.makedirs(f"{DATA_DIR}/friends", exist_ok=True)
+    for friend in friends:
+        os.makedirs(f"{DATA_DIR}/friends/{friend.username}", exist_ok=True)
+        os.makedirs(f"{DATA_DIR}/friends/{friend.username}/info", exist_ok=True)
+        os.makedirs(f"{DATA_DIR}/friends/{friend.username}/profile_pictures", exist_ok=True)
+        friend.profile_picture.download()
+        info_data = {
+            "profile": friend.data_dict,
+            "photo": friend.profile_picture.metadata,
+        }
+        with open(f"{DATA_DIR}/friends/{friend.username}/info/info{unix_timestamp()}.json", "w+") as f:
+            json.dump(info_data, f, indent=4)
+        with open(f"{DATA_DIR}/friends/{friend.username}/profile_pictures/{unix_timestamp()}.jpg", "wb") as f:
+            f.write(friend.profile_picture.data)
+
+@cli.command(help="Post the photos under /data/photos to your feed")
+def post():
+    bf = BeFake()
+    try:
+        bf.load("token.txt")
+    except Exception as ex:
+        raise Exception("No token found, are you logged in?")
+    with open("data/photos/primary.png", "rb") as f:
+        primary_bytes = f.read()
+    with open("data/photos/secondary.png", "rb") as f:
+        secondary_bytes = f.read()
+    now = pendulum.now()
+    taken_at = f"{now.to_date_string()}T{now.to_time_string()}Z"
+    r = bf.create_post(
+        primary=primary_bytes, secondary=secondary_bytes,
+        is_late=False, is_public=False, caption="", location={"latitude": "40.741895", "longitude": "-73.989308"})
+    print(r)
+
+@cli.command(help="Upload random files to BeReal Servers leeel")
+def upload():
+    bf = BeFake()
+    try:
+        bf.load("token.txt")
+    except Exception as ex:
+        raise Exception("No token found, are you logged in?")
+    with open("data/photos/jeuusd992wd41.jpg", "rb") as f:
+        data = f.read()
+    
+    r = bf.upload(data)
+    print(r)
 
 if __name__ == "__main__":
     cli()
+    bf = BeFake()
+    try:
+        bf.load("token.txt")
+    except Exception as ex:
+        raise Exception("No token found, are you logged in?")
+    
+    
+    r = bf.get_friend_suggestions()
+    for elem in r:
+        print(elem.username)
+    print(r)
