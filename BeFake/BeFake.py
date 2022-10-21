@@ -23,7 +23,8 @@ class BeFake:
             proxies=proxies,
             verify=not disable_ssl,
             headers={
-                "user-agent": "AlexisBarreyat.BeReal/0.24.0 iPhone/16.0.2 hw/iPhone12_8 (GTMSUF/1)",
+                #"user-agent": "AlexisBarreyat.BeReal/0.24.0 iPhone/16.0.2 hw/iPhone12_8 (GTMSUF/1)",
+                "user-agent": "BeReal/0.25.1 (iPhone; iOS 16.0.2; Scale/2.00)",
                 "x-ios-bundle-identifier": "AlexisBarreyat.BeReal",
             },
         )
@@ -233,9 +234,7 @@ class BeFake:
     ):
         if taken_at is None:
             now = pendulum.now()
-        else:
-            now = taken_at
-        taken_at = f"{now.to_date_string}T{now.to_time_string()}Z"
+            taken_at = f"{now.to_date_string()}T{now.to_time_string()}Z"
 
         primary_picture = Picture({})
         primary_picture.upload(self, primary)
@@ -262,5 +261,11 @@ class BeFake:
                 "path": secondary_picture.url.replace("https://storage.bere.al/", ""),
             },
         }
-        res = self.client.post(f"{self.api_url}/content/post", data=json_data)
-        return res.json()
+        res = self.client.post(f"{self.api_url}/content/post", json=json_data, headers={"authorization": self.token})
+        return res.content
+    
+    def upload(self, data: bytes):
+        file = Picture({})
+        file.upload(self, data)
+        print(file.url)
+        return file

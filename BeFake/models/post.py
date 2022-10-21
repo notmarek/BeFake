@@ -3,6 +3,7 @@ from .user import User
 from .picture import Picture
 from .realmoji import RealMoji
 import pendulum
+import json
 
 
 class Post(object):
@@ -50,9 +51,11 @@ class Post(object):
         self.screenshots_v2 = data_dict.get(
             "screenshotsV2", None
         )  # TODO: figure out what this does
+        self.data_dict = data_dict
 
     def __repr__(self) -> str:
         return f"<Post {self.id}>"
+
 
     def create(
         self,

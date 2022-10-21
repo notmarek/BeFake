@@ -2,3 +2,7 @@
 __pycache__
 token.txt
 feeds
+
+data/
+
+.DS_Store

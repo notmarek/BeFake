@@ -17,7 +17,10 @@ class Picture(object):
         return f"<Image {self.url} {self.width}x{self.height}>"
 
     def download(self):
-        return httpx.get(self.url).content
+        r = httpx.get(self.url)
+        self.metadata = {header: r.headers[header] for header in r.headers.keys()}
+        self.data = r.content
+        return r.content
 
     def upload(
         self, befake, img_file: bytes, secondary: bool = False, name: str = None
@@ -77,5 +80,6 @@ class Picture(object):
         self.height = 2000
 
         # Photos/2lzXSG00xMNWR4cKFuGAzdUbOXM2/bereal/3a0fa270-bd7b-4dfd-8af0-d5a23a291999-1660586403.jpg
+        # https://storage.bere.al/Photos/2lzXSG00xMNWR4cKFuGAzdUbOXM2/bereal/3a0fa270-bd7b-4dfd-8af0-d5a23a291999-1660586403.jpg
         # Photos%2F2lzXSG00xMNWR4cKFuGAzdUbOXM2%2Fbereal%2F3a0fa270-bd7b-4dfd-8af0-d5a23a291999-1660586403.jpg
         # https://firebasestorage.googleapis.com/v0/b/storage.bere.al/o/Photos%2F2lzXSG00xMNWR4cKFuGAzdUbOXM2%2Fbereal%2F3a0fa270-bd7b-4dfd-8af0-d5a23a291999-1660586403.jpg?uploadType=resumable&name=Photos%2F2lzXSG00xMNWR4cKFuGAzdUbOXM2%2Fbereal%2F3a0fa270-bd7b-4dfd-8af0-d5a23a291999-1660586403.jpg
