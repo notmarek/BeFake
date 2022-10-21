@@ -53,7 +53,7 @@ def download_media(client: httpx.Client, item):
 
 
 @cli.command(help="Download a feed")
-@click.argument("feed_id", type=click.Choice(["friends", "discovery"]))
+@click.argument("feed_id", type=click.Choice(["friends", "discovery", "memories"]))
 def feed(feed_id):
     bf = BeFake()
     try:
@@ -65,27 +65,36 @@ def feed(feed_id):
 
     elif feed_id == "discovery":
         feed = bf.get_discovery_feed()
+    
+    elif feed_id == "memories":
+        feed = bf.get_memories_feed()
 
     os.makedirs(f"feeds/{feed_id}", exist_ok=True)
     for item in feed:
-        os.makedirs(f"feeds/{feed_id}/{item.user.username}/{item.id}", exist_ok=True)
-
-        # with open(
-        #     f"feeds/{feed_id}/{item.user.username}/{item.id}/info.json",
-        #     "w",
-        # ) as f:
-        #     f.write(json.dumps(item))
-
-        with open(
-            f"feeds/{feed_id}/{item.user.username}/{item.id}/primary.jpg",
-            "wb",
-        ) as f:
-            f.write(item.primary_photo.download())
-        with open(
-            f"feeds/{feed_id}/{item.user.username}/{item.id}/secondary.jpg",
-            "wb",
-        ) as f:
-            f.write(item.secondary_photo.download())
+        if feed_id == "memories":
+            os.makedirs(f"feeds/memories/{item.memory_day}", exist_ok=True)
+            with open(f"feeds/memories/{item.memory_day}/primary.jpg", "wb") as f:
+                f.write(item.primary_photo.download())
+            with open(f"feeds/memories/{item.memory_day}/secondary.jpg", "wb") as f:
+                f.write(item.secondary_photo.download())
+            with open(f"feeds/memories/{item.memory_day}/info.json", "w+") as f:
+                json.dump(item.data_dict, f, indent=4)
+            continue
+        else:
+            os.makedirs(f"feeds/{feed_id}/{item.user.username}/{item.id}", exist_ok=True)
+            with open(
+                f"feeds/{feed_id}/{item.user.username}/{item.id}/primary.jpg",
+                "wb",
+            ) as f:
+                f.write(item.primary_photo.download())
+            with open(
+                f"feeds/{feed_id}/{item.user.username}/{item.id}/secondary.jpg",
+                "wb",
+            ) as f:
+                f.write(item.secondary_photo.download())
+            with open(f"feeds/{feed_id}/{item.user.username}/{item.id}/info.json", "w+") as f:
+                json.dump(item.data_dict, f, indent=4)
+            
         for emoji in item.realmojis:
             os.makedirs(
                 f"feeds/{feed_id}/{item.user.username}/{item.id}/reactions/{emoji.type}",
