@@ -3,12 +3,12 @@ import json
 import httpx
 import pendulum
 import hashlib
-from models.picture import Picture
-from models.realmoji_picture import RealmojiPicture
+from .models.picture import Picture
+from .models.realmoji_picture import RealmojiPicture
 
-from models.post import Post
-from models.memory import Memory
-from models.user import User
+from .models.post import Post
+from .models.memory import Memory
+from .models.user import User
 
 
 class BeFake:
@@ -336,7 +336,7 @@ class BeFake:
         }
         res = self.client.post("https://us-central1-alexisbarreyat-bereal.cloudfunctions.net/sendRealMoji", json=json_data, headers={"authorization": f"Bearer {self.token}"})
         return res.json()
-    
+
     # works also for not friends and unpublic post with given post_id
     def get_reactions(self, post_id):
         payload = {

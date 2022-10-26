@@ -1,8 +1,8 @@
 import json
 import os
-from BeFake import BeFake
-from models.realmoji_picture import RealmojiPicture
-from utils import *
+from .BeFake import BeFake
+from .models.realmoji_picture import RealmojiPicture
+from .utils import *
 
 import click
 import httpx

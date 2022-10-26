@@ -5,9 +5,18 @@
 
 A cool tool for collecting all your friends photos from BeReal (including RealMojis) without taking any screenshots or even opening the app.
 
-
+## Install
+```bash
+pip install git+https://github.com/notmarek/BeFake
+```
 
 ## Usage
+```bash
+befake [OPTIONS] COMMAND [ARGS]...
+```
+
+
+## Developement
 
 
 ```bash
@@ -15,7 +24,7 @@ A cool tool for collecting all your friends photos from BeReal (including RealMo
   source .venv/bin/activate
 
   pip install -r requirements.txt
-  python BeFake
+  python befake.py
 ```
 
 have fun
