@@ -1,10 +1,14 @@
 import json
 import os
 from BeFake import BeFake
+from utils import *
 
 import click
 import httpx
 
+import pendulum
+
+DATA_DIR = "data"
 
 @click.group()
 def cli():
@@ -65,48 +69,139 @@ def feed(feed_id):
 
     elif feed_id == "discovery":
         feed = bf.get_discovery_feed()
-    
+
     elif feed_id == "memories":
         feed = bf.get_memories_feed()
 
-    os.makedirs(f"feeds/{feed_id}", exist_ok=True)
+    os.makedirs(f"{DATA_DIR}/feeds/{feed_id}", exist_ok=True)
     for item in feed:
         if feed_id == "memories":
-            os.makedirs(f"feeds/memories/{item.memory_day}", exist_ok=True)
-            with open(f"feeds/memories/{item.memory_day}/primary.jpg", "wb") as f:
+            print("saving memory", f"{DATA_DIR}/feeds/memories/{item.memory_day}")
+            os.makedirs(f"{DATA_DIR}/feeds/memories/{item.memory_day}", exist_ok=True)
+            with open(f"{DATA_DIR}/feeds/memories/{item.memory_day}/primary.jpg", "wb") as f:
                 f.write(item.primary_photo.download())
-            with open(f"feeds/memories/{item.memory_day}/secondary.jpg", "wb") as f:
+            with open(f"{DATA_DIR}/feeds/memories/{item.memory_day}/secondary.jpg", "wb") as f:
                 f.write(item.secondary_photo.download())
-            with open(f"feeds/memories/{item.memory_day}/info.json", "w+") as f:
+            with open(f"{DATA_DIR}/feeds/memories/{item.memory_day}/info.json", "w+") as f:
                 json.dump(item.data_dict, f, indent=4)
             continue
-        else:
-            os.makedirs(f"feeds/{feed_id}/{item.user.username}/{item.id}", exist_ok=True)
-            with open(
-                f"feeds/{feed_id}/{item.user.username}/{item.id}/primary.jpg",
-                "wb",
-            ) as f:
-                f.write(item.primary_photo.download())
-            with open(
-                f"feeds/{feed_id}/{item.user.username}/{item.id}/secondary.jpg",
-                "wb",
-            ) as f:
-                f.write(item.secondary_photo.download())
-            with open(f"feeds/{feed_id}/{item.user.username}/{item.id}/info.json", "w+") as f:
-                json.dump(item.data_dict, f, indent=4)
-            
+        print(f"saving post by {item.user.username}".ljust(50, " "),f"{item.id}")
+        os.makedirs(f"{DATA_DIR}/feeds/{feed_id}/{item.user.username}/{item.id}", exist_ok=True)
+
+        with open(
+            f"{DATA_DIR}/feeds/{feed_id}/{item.user.username}/{item.id}/info.json",
+            "w+",
+        ) as f:
+            f.write(json.dumps(item.data_dict, indent=4))
+
+        with open(
+            f"{DATA_DIR}/feeds/{feed_id}/{item.user.username}/{item.id}/primary.jpg",
+            "wb",
+        ) as f:
+            f.write(item.primary_photo.download())
+        with open(
+            f"{DATA_DIR}/feeds/{feed_id}/{item.user.username}/{item.id}/secondary.jpg",
+            "wb",
+        ) as f:
+            f.write(item.secondary_photo.download())
         for emoji in item.realmojis:
             os.makedirs(
-                f"feeds/{feed_id}/{item.user.username}/{item.id}/reactions/{emoji.type}",
+                f"{DATA_DIR}/feeds/{feed_id}/{item.user.username}/{item.id}/reactions/{emoji.type}",
                 exist_ok=True,
             )
 
             with open(
-                f"feeds/{feed_id}/{item.user.username}/{item.id}/reactions/{emoji.type}/{emoji.username}.jpg",
+                f"{DATA_DIR}/feeds/{feed_id}/{item.user.username}/{item.id}/reactions/{emoji.type}/{emoji.username}.jpg",
                 "wb",
             ) as f:
                 f.write(emoji.photo.download())
 
+@cli.command(help="Download friends information")
+def parse_friends():
+    bf = BeFake()
+    try:
+        bf.load("token.txt")
+    except:
+        raise Exception("No token found, are you logged in?")
+    friends = bf.get_friends()
+    os.makedirs(f"{DATA_DIR}/friends", exist_ok=True)
+    for friend in friends:
+        os.makedirs(f"{DATA_DIR}/friends/{friend.username}", exist_ok=True)
+        os.makedirs(f"{DATA_DIR}/friends/{friend.username}/info", exist_ok=True)
+        os.makedirs(f"{DATA_DIR}/friends/{friend.username}/profile_pictures", exist_ok=True)
+        with open(f"{DATA_DIR}/friends/{friend.username}/info/info{unix_timestamp()}.json", "w+") as f:
+            json.dump(friend.data_dict, f, indent=4)
+
+        if friend.profile_picture.exists():
+            with open(f"{DATA_DIR}/friends/{friend.username}/profile_pictures/{unix_timestamp()}.jpg", "wb") as f:
+                f.write(friend.profile_picture.download())
+
+@cli.command(help="Post the photos under /data/photos to your feed")
+@click.argument('primary_path', required=False, type=click.STRING)
+@click.argument('secondary_path', required=False, type=click.STRING)
+def post(primary_path, secondary_path):
+    primary_path = "data/photos/primary.jpg" if not primary_path else primary_path
+    secondary_path = "data/photos/secondary.jpg" if not secondary_path else secondary_path
+    bf = BeFake()
+    try:
+        bf.load("token.txt")
+    except Exception as ex:
+        raise Exception("No token found, are you logged in?")
+    with open("data/photos/primary.png", "rb") as f:
+        primary_bytes = f.read()
+    with open("data/photos/secondary.png", "rb") as f:
+        secondary_bytes = f.read()
+    r = bf.create_post(
+        primary=primary_bytes, secondary=secondary_bytes,
+        is_late=False, is_public=False, caption="Insert your caption here", location={"latitude": "0", "longitude": "0"}, retakes=0)
+    print(r)
+
+@cli.command(help="Upload random photoes to BeReal Servers")
+@click.argument("filename", type=click.STRING)
+def upload(filename):
+    bf = BeFake()
+    try:
+        bf.load("token.txt")
+    except Exception as ex:
+        raise Exception("No token found, are you logged in?")
+    with open(f"data/photos/{filename}", "rb") as f:
+        data = f.read()
+    r = bf.upload(data)
+    print(f"Your file is now uploaded to:\n\t{r}")
+
+@cli.command(help="Add a comment to a post")
+@click.argument("post_id", type=click.STRING)
+@click.argument("content", type=click.STRING)
+def comment(post_id, content):
+    bf = BeFake()
+    try:
+        bf.load("token.txt")
+    except Exception as ex:
+        raise Exception("No token found, are you logged in?")
+    r = bf.add_comment(post_id, content)
+    print(r)
+
+@cli.command(help="Pretend to screenshot a post")
+@click.argument("post_id", type=click.STRING)
+def screenshot(post_id):
+    bf = BeFake()
+    try:
+        bf.load("token.txt")
+    except Exception as ex:
+        raise Exception("No token found, are you logged in?")
+    r = bf.take_screenshot(post_id)
+    print(r)
 
 if __name__ == "__main__":
     cli()
+    """bf = BeFake()
+    try:
+        bf.load("token.txt")
+    except Exception as ex:
+        raise Exception("No token found, are you logged in?")
+    
+    
+    r = bf.get_friend_suggestions()
+    for elem in r:
+        print(elem.username)
+    print(r)"""

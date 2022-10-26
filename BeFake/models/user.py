@@ -7,6 +7,7 @@ class User(object):
 
     def __init__(self, data_dict, befake) -> None:
         self.data_dict = data_dict
+
         self.bf = befake
         self.id = data_dict.get("id", None)
         self.is_self = self.bf.user_id == self.id
