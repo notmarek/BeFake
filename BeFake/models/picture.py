@@ -18,7 +18,6 @@ class Picture(object):
 
     def download(self):
         r = httpx.get(self.url)
-        self.metadata = {header: r.headers[header] for header in r.headers.keys()}
         self.data = r.content
         return r.content
 

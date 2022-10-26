@@ -116,14 +116,10 @@ def parse_friends():
         os.makedirs(f"{DATA_DIR}/friends/{friend.username}/info", exist_ok=True)
         os.makedirs(f"{DATA_DIR}/friends/{friend.username}/profile_pictures", exist_ok=True)
         friend.profile_picture.download()
-        info_data = {
-            "profile": friend.data_dict,
-            "photo": friend.profile_picture.metadata,
-        }
         with open(f"{DATA_DIR}/friends/{friend.username}/info/info{unix_timestamp()}.json", "w+") as f:
-            json.dump(info_data, f, indent=4)
+            json.dump(friend.data_dict, f, indent=4)
         with open(f"{DATA_DIR}/friends/{friend.username}/profile_pictures/{unix_timestamp()}.jpg", "wb") as f:
-            f.write(friend.profile_picture.data)
+                f.write(friend.profile_picture.data)
 
 @cli.command(help="Post the photos under /data/photos to your feed")
 def post():
