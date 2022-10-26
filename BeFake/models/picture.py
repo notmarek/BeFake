@@ -16,9 +16,11 @@ class Picture(object):
     def __repr__(self) -> str:
         return f"<Image {self.url} {self.width}x{self.height}>"
 
+    def exists(self):
+        return self.url is not None
+    
     def download(self):
         r = httpx.get(self.url)
-        self.metadata = {header: r.headers[header] for header in r.headers.keys()}
         self.data = r.content
         return r.content
 
