@@ -269,3 +269,20 @@ class BeFake:
         file.upload(self, data)
         print(file.url)
         return file
+    
+    def take_screenshot(self, post_id):
+        payload = {
+            "postId": post_id,
+        }
+        res = self.client.post(f"{self.api_url}/content/screenshots", params=payload, headers={"authorization": self.token})
+        return res.content
+    
+    def add_comment(self, post_id, comment):
+        payload = {
+            "postId": post_id,
+        }
+        data = {
+            "content": comment,
+        }
+        res = self.client.post(f"{self.api_url}/content/comments", params=payload, data=data, headers={"authorization": self.token})
+        return res.json()

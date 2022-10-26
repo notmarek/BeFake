@@ -57,7 +57,7 @@ def download_media(client: httpx.Client, item):
 
 
 @cli.command(help="Download a feed")
-@click.argument("feed_id", type=click.Choice(["friends", "discovery"]))
+@click.argument("feed_id", type=click.Choice(["friends", "discovery", "memories"]))
 def feed(feed_id):
     bf = BeFake()
     try:
@@ -70,8 +70,22 @@ def feed(feed_id):
     elif feed_id == "discovery":
         feed = bf.get_discovery_feed()
 
+    elif feed_id == "memories":
+        feed = bf.get_memories_feed()
+
     os.makedirs(f"{DATA_DIR}/feeds/{feed_id}", exist_ok=True)
     for item in feed:
+        if feed_id == "memories":
+            print("saving memory", f"{DATA_DIR}/feeds/memories/{item.memory_day}")
+            os.makedirs(f"{DATA_DIR}/feeds/memories/{item.memory_day}", exist_ok=True)
+            with open(f"{DATA_DIR}/feeds/memories/{item.memory_day}/primary.jpg", "wb") as f:
+                f.write(item.primary_photo.download())
+            with open(f"{DATA_DIR}/feeds/memories/{item.memory_day}/secondary.jpg", "wb") as f:
+                f.write(item.secondary_photo.download())
+            with open(f"{DATA_DIR}/feeds/memories/{item.memory_day}/info.json", "w+") as f:
+                json.dump(item.data_dict, f, indent=4)
+            continue
+        print(f"saving post by {item.user.username}".ljust(50, " "),f"{item.id}")
         os.makedirs(f"{DATA_DIR}/feeds/{feed_id}/{item.user.username}/{item.id}", exist_ok=True)
 
         with open(
@@ -123,7 +137,11 @@ def parse_friends():
                 f.write(friend.profile_picture.download())
 
 @cli.command(help="Post the photos under /data/photos to your feed")
-def post():
+@click.argument('primary_path', required=False, type=click.STRING)
+@click.argument('secondary_path', required=False, type=click.STRING)
+def post(primary_path, secondary_path):
+    primary_path = "data/photos/primary.jpg" if not primary_path else primary_path
+    secondary_path = "data/photos/secondary.jpg" if not secondary_path else secondary_path
     bf = BeFake()
     try:
         bf.load("token.txt")
@@ -133,29 +151,50 @@ def post():
         primary_bytes = f.read()
     with open("data/photos/secondary.png", "rb") as f:
         secondary_bytes = f.read()
-    now = pendulum.now()
-    taken_at = f"{now.to_date_string()}T{now.to_time_string()}Z"
     r = bf.create_post(
         primary=primary_bytes, secondary=secondary_bytes,
-        is_late=False, is_public=False, caption="", location={"latitude": "40.741895", "longitude": "-73.989308"})
+        is_late=False, is_public=False, caption="Insert your caption here", location={"latitude": "0", "longitude": "0"}, retakes=0)
     print(r)
 
-@cli.command(help="Upload random files to BeReal Servers leeel")
-def upload():
+@cli.command(help="Upload random photoes to BeReal Servers")
+@click.argument("filename", type=click.STRING)
+def upload(filename):
     bf = BeFake()
     try:
         bf.load("token.txt")
     except Exception as ex:
         raise Exception("No token found, are you logged in?")
-    with open("data/photos/jeuusd992wd41.jpg", "rb") as f:
+    with open(f"data/photos/{filename}", "rb") as f:
         data = f.read()
-    
     r = bf.upload(data)
+    print(f"Your file is now uploaded to:\n\t{r}")
+
+@cli.command(help="Add a comment to a post")
+@click.argument("post_id", type=click.STRING)
+@click.argument("content", type=click.STRING)
+def comment(post_id, content):
+    bf = BeFake()
+    try:
+        bf.load("token.txt")
+    except Exception as ex:
+        raise Exception("No token found, are you logged in?")
+    r = bf.add_comment(post_id, content)
+    print(r)
+
+@cli.command(help="Pretend to screenshot a post")
+@click.argument("post_id", type=click.STRING)
+def screenshot(post_id):
+    bf = BeFake()
+    try:
+        bf.load("token.txt")
+    except Exception as ex:
+        raise Exception("No token found, are you logged in?")
+    r = bf.take_screenshot(post_id)
     print(r)
 
 if __name__ == "__main__":
     cli()
-    bf = BeFake()
+    """bf = BeFake()
     try:
         bf.load("token.txt")
     except Exception as ex:
@@ -165,4 +204,4 @@ if __name__ == "__main__":
     r = bf.get_friend_suggestions()
     for elem in r:
         print(elem.username)
-    print(r)
+    print(r)"""
