@@ -193,15 +193,18 @@ def screenshot(post_id):
     print(r)
 
 if __name__ == "__main__":
-    cli()
-    """bf = BeFake()
+    #cli()
+    bf = BeFake()
     try:
         bf.load("token.txt")
     except Exception as ex:
         raise Exception("No token found, are you logged in?")
     
     
-    r = bf.get_friend_suggestions()
-    for elem in r:
-        print(elem.username)
-    print(r)"""
+    #r = bf.add_comment("zS3C5bKtDiiMvalc0m4jH")
+    #r = bf.take_screenshot("zS3C5bKtDiiMvalc0m4jH")
+    #r = bf.friends_of_friends()
+    with open("data/photos/cat.png", "rb") as f:
+        picture_bytes = f.read()
+    r = bf.post_realmoji("Pr2y03YBR9Z8H6T9wDJSI", picture_bytes, "instant")
+    print(r)
