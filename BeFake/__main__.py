@@ -203,6 +203,39 @@ def delete_post():
     r = bf.delete_post()
     print(r)
 
+@cli.command(help="Change the caption of your post")
+@click.argument("caption", type=click.STRING)
+def change_caption(caption):
+    bf = BeFake()
+    try:
+        bf.load("token.txt")
+    except Exception as ex:
+        raise Exception("No token found, are you logged in?")
+    r = bf.change_caption(caption)
+    print(r)
+
+@cli.command(help="Gets information about a user profile")
+@click.argument("user_id", type=click.STRING)
+def get_user_profile(user_id):
+    bf = BeFake()
+    try:
+        bf.load("token.txt")
+    except Exception as ex:
+        raise Exception("No token found, are you logged in?")
+    r = bf.get_user_profile(user_id)
+    print(r)
+
+@cli.command(help="Sends a notification to your friends, saying you're taking a bereal")
+@click.argument("user_id", type=click.STRING, required=False)
+@click.argument("username", type=click.STRING, required=False)
+def send_push_notification(user_id, username):
+    bf = BeFake()
+    try:
+        bf.load("token.txt")
+    except Exception as ex:
+        raise Exception("No token found, are you logged in?")
+    r = bf.send_capture_in_progress_push(topic=user_id if user_id else None, username=username if username else None)
+    print(r)
 
 @cli.command(help="post an instant realmoji")
 @click.argument("post_id", type=click.STRING)
@@ -220,8 +253,6 @@ def instant_realmoji(post_id, filename):
     r = bf.post_instant_realmoji(post_id, data)
     print(r)
 
-
-
 @cli.command(help="Upload an emoji-specific realmoji")
 @click.argument("type", type=click.Choice(["up", "happy", "surprised", "laughing", "heartEyes"]))
 @click.argument("filename", required=False, type=click.STRING)
@@ -237,7 +268,6 @@ def upload_realmoji(type, filename):
         data = f.read()
     r = bf.upload_realmoji(data, type=type)
     print(r)
-
 
 # currently broken, gives internal server error
 @cli.command(help="Add realmoji to post")
@@ -263,3 +293,7 @@ def emoji_realmoji(post_id, type, filename):
 
 if __name__ == "__main__":
     cli()
+    """bf = BeFake()
+    bf.load("token.txt")
+
+    print(bf.delete_post())"""

@@ -103,6 +103,20 @@ class BeFake:
         ).json()
         return User(res, self)
 
+    def get_user_profile(self, user_id):
+        payload = {
+            "data": {
+                "uid": user_id
+            }
+        }
+        # here for example we have a firebase-instance-id-token header with the value from the next line, that we can just ignore (but maybe we need it later, there seem to be some changes to the API especially endpoints moving tho the cloudfunctions.net server)
+        # cTn8odwxQo6DR0WFVnM9TJ:APA91bGV86nmQUkqnLfFv18IhpOak1x02sYMmKvpUAqhdfkT9Ofg29BXKXS2mbt9oE-LoHiiKViXw75xKFLeOxhb68wwvPCJF79z7V5GbCsIQi7XH1RSD8ItcznqM_qldSDjghf5N8Uo
+        res = self.client.post("https://us-central1-alexisbarreyat-bereal.cloudfunctions.net/getUserProfile",
+            json=payload,
+            headers={"authorization": f"Bearer {self.token}"}
+        )
+        return res.json()
+
     def get_friends_feed(self):
         res = self.client.get(
             f"{self.api_url}/feeds/friends",
@@ -231,6 +245,32 @@ class BeFake:
 
     def get_user_by_phone_number(self, phone_number: str):
         return self.get_users_by_phone_number([phone_number])[0]
+
+    def send_capture_in_progress_push(self, topic=None, username=None):
+        topic = topic if topic else self.user_id
+        username = username if username else self.get_user_info().username
+        res = self.client.post(
+            "https://us-central1-alexisbarreyat-bereal.cloudfunctions.net/sendCaptureInProgressPush",
+            headers={
+                "authorization": f"Bearer {self.token}",
+            },
+            json={"data": {
+                "photoURL": "",
+                "topic": topic,
+                "username": username
+            }}
+        ).json()
+        return res
+
+    def change_caption(self, caption: str):
+        res = self.client.post(
+            "https://us-central1-alexisbarreyat-bereal.cloudfunctions.net/setCaptionPost",
+            headers={
+                "authorization": f"Bearer {self.token}",
+            },
+            json={"data": {"caption": caption}}
+        ).json()
+        return res
 
     def create_post(
         self,
