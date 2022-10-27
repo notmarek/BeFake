@@ -293,7 +293,3 @@ def emoji_realmoji(post_id, type, filename):
 
 if __name__ == "__main__":
     cli()
-    """bf = BeFake()
-    bf.load("token.txt")
-
-    print(bf.delete_post())"""
