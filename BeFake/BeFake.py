@@ -4,6 +4,7 @@ import httpx
 import pendulum
 import hashlib
 from models.picture import Picture
+from models.realmoji_picture import RealmojiPicture
 
 from models.post import Post
 from models.memory import Memory
@@ -286,3 +287,44 @@ class BeFake:
         }
         res = self.client.post(f"{self.api_url}/content/comments", params=payload, data=data, headers={"authorization": self.token})
         return res.json()
+
+    def upload_realmoji(self, image_file: bytes, type: str):
+        picture = RealmojiPicture({})
+        name = picture.upload(self, image_file, type)
+        return name
+    
+    def post_realmoji(
+        self,
+        post_id: str,
+        type: str,
+        emoji: str,
+        name: str
+    ):
+        json_data = {
+            "data": {
+                "action": "add",
+                "emoji": emoji,
+                "ownerId": self.user_id,
+                "photoId": post_id,
+                "type": type,
+                "uri": name
+            }
+        }
+        
+        res = self.client.post("https://us-central1-alexisbarreyat-bereal.cloudfunctions.net/sendRealMoji", json=json_data, headers={"authorization": f"Bearer {self.token}"})
+        return res.content
+
+    def post_instant_realmoji(self, image_file: bytes, post_id: str):
+        name = self.upload_realmoji(image_file, "instant")
+        json_data = {
+            "data": {
+                "action": "add",
+                "emoji": "⚡",
+                "ownerId": self.user_id,
+                "photoId": post_id,
+                "type": "instant",
+                "uri": name
+            }
+        }
+        res = self.client.post("https://us-central1-alexisbarreyat-bereal.cloudfunctions.net/sendRealMoji", json=json_data, headers={"authorization": f"Bearer {self.token}"})
+        return res.content

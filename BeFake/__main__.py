@@ -1,6 +1,7 @@
 import json
 import os
 from BeFake import BeFake
+from models.realmoji_picture import RealmojiPicture
 from utils import *
 
 import click
@@ -194,14 +195,18 @@ def screenshot(post_id):
 
 if __name__ == "__main__":
     cli()
-    """bf = BeFake()
-    try:
-        bf.load("token.txt")
-    except Exception as ex:
-        raise Exception("No token found, are you logged in?")
-    
-    
-    r = bf.get_friend_suggestions()
-    for elem in r:
-        print(elem.username)
-    print(r)"""
+    #bf = BeFake()
+    #try:
+    #    bf.load("token.txt")
+    #except Exception as ex:
+    #    raise Exception("No token found, are you logged in?")
+
+    #with open("data/photos/cat.png", "rb") as f:
+    #    picture_bytes = f.read()
+
+    # Instant Reaction
+    #print(bf.post_instant_realmoji(picture_bytes, "J-NIa7WAaSOuVs536atLw"))
+
+    # Realmoji Upload + Post
+    #name = bf.upload_realmoji(picture_bytes, "up")
+    #print(bf.post_realmoji("J-NIa7WAaSOuVs536atLw", "up", "👍", name))
