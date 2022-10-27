@@ -193,20 +193,63 @@ def screenshot(post_id):
     r = bf.take_screenshot(post_id)
     print(r)
 
+
+@cli.command(help="post an instant realmoji")
+@click.argument("post_id", type=click.STRING)
+@click.argument("filename", required=False, type=click.STRING)
+def instant_realmoji(post_id, filename):
+    bf = BeFake()
+    try:
+        bf.load("token.txt")
+    except Exception as ex:
+        raise Exception("No token found, are you logged in?")
+    if not filename:
+        filename = "primary.jpg"
+    with open(f"data/photos/{filename}", "rb") as f:
+        data = f.read()
+    r = bf.post_instant_realmoji(post_id, data)
+    print(r)
+
+
+
+@cli.command(help="Upload an emoji-specific realmoji")
+@click.argument("type", type=click.Choice(["up", "happy", "surprised", "laughing", "heartEyes"]))
+@click.argument("filename", required=False, type=click.STRING)
+def upload_realmoji(type, filename):
+    bf = BeFake()
+    try:
+        bf.load("token.txt")
+    except Exception as ex:
+        raise Exception("No token found, are you logged in?")
+    if not filename:
+        filename = f"{type}.jpg"
+    with open(f"data/photos/{filename}", "rb") as f:
+        data = f.read()
+    r = bf.upload_realmoji(data, type=type)
+    print(r)
+
+
+# currently broken, gives internal server error
+@cli.command(help="Add realmoji to post")
+@click.argument("post_id", type=click.STRING)
+@click.argument("type", type=click.Choice(["up", "happy", "surprised", "laughing", "heartEyes"]))
+@click.argument("filename", required=False, type=click.STRING)
+def emoji_realmoji(post_id, type, filename):
+    type = str(type)
+    bf = BeFake()
+    try:
+        bf.load("token.txt")
+    except Exception as ex:
+        raise Exception("No token found, are you logged in?")
+    if not filename:
+        filename = f"{type}.jpg"
+    with open(f"data/photos/{filename}", "rb") as f:
+        data = f.read()
+    # we don't have any method to know which realmojis (mapped to a type) the user already uploaded, we think, the client just stores the urls to uploaded realmojis and sends them...
+    r1 = bf.upload_realmoji(data, type=type)
+    r2 = bf.post_realmoji(post_id, type=type, name=r1)
+    print(r2)
+
+
 if __name__ == "__main__":
     cli()
-    #bf = BeFake()
-    #try:
-    #    bf.load("token.txt")
-    #except Exception as ex:
-    #    raise Exception("No token found, are you logged in?")
-
-    #with open("data/photos/cat.png", "rb") as f:
-    #    picture_bytes = f.read()
-
-    # Instant Reaction
-    #print(bf.post_instant_realmoji(picture_bytes, "J-NIa7WAaSOuVs536atLw"))
-
-    # Realmoji Upload + Post
-    #name = bf.upload_realmoji(picture_bytes, "up")
-    #print(bf.post_realmoji("J-NIa7WAaSOuVs536atLw", "up", "👍", name))
