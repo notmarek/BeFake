@@ -193,6 +193,16 @@ def screenshot(post_id):
     r = bf.take_screenshot(post_id)
     print(r)
 
+@cli.command(help="Delete your post")
+def delete_post():
+    bf = BeFake()
+    try:
+        bf.load("token.txt")
+    except Exception as ex:
+        raise Exception("No token found, are you logged in?")
+    r = bf.delete_post()
+    print(r)
+
 
 @cli.command(help="post an instant realmoji")
 @click.argument("post_id", type=click.STRING)
