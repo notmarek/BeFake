@@ -288,32 +288,43 @@ class BeFake:
         res = self.client.post(f"{self.api_url}/content/comments", params=payload, data=data, headers={"authorization": self.token})
         return res.json()
 
-    def get_realmoji_upload_url(self):
-        payload = {
-            "mimeType": "image/webp",
-        }
-        res = self.client.get(f"{self.api_url}/content/realmojis/upload-url",
-            params=payload,
-            headers={"authorization": self.token}
-        )
-        return res.json()["data"]["url"]
-
+    def upload_realmoji(self, image_file: bytes, type: str):
+        picture = RealmojiPicture({})
+        name = picture.upload(self, image_file, type)
+        return name
+    
     def post_realmoji(
         self,
         post_id: str,
-        image_file: bytes,
-        type: str
+        type: str,
+        emoji: str,
+        name: str
     ):
-        picture = RealmojiPicture({})
-        picture.upload(self, image_file, type)
-        print(picture.url)
-        """json_data = {
-            "backCamera": {
-                "bucket": "storage.bere.al",
-                "height": primary_picture.height,
-                "width": primary_picture.width,
-                "path": primary_picture.url.replace("https://storage.bere.al/", ""),
+        json_data = {
+            "data": {
+                "action": "add",
+                "emoji": emoji,
+                "ownerId": self.user_id,
+                "photoId": post_id,
+                "type": type,
+                "uri": name
             }
         }
-        res = self.client.post(f"{self.api_url}/content/post", json=json_data, headers={"authorization": self.token})
-        return res.content"""
+        
+        res = self.client.post("https://us-central1-alexisbarreyat-bereal.cloudfunctions.net/sendRealMoji", json=json_data, headers={"authorization": f"Bearer {self.token}"})
+        return res.content
+
+    def post_instant_realmoji(self, image_file: bytes, post_id: str):
+        name = self.upload_realmoji(image_file, "instant")
+        json_data = {
+            "data": {
+                "action": "add",
+                "emoji": "⚡",
+                "ownerId": self.user_id,
+                "photoId": post_id,
+                "type": "instant",
+                "uri": name
+            }
+        }
+        res = self.client.post("https://us-central1-alexisbarreyat-bereal.cloudfunctions.net/sendRealMoji", json=json_data, headers={"authorization": f"Bearer {self.token}"})
+        return res.content
