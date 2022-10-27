@@ -292,14 +292,23 @@ class BeFake:
         picture = RealmojiPicture({})
         name = picture.upload(self, image_file, type)
         return name
-    
+    # currently gives server errors
     def post_realmoji(
         self,
         post_id: str,
         type: str,
-        emoji: str,
         name: str
     ):
+        emojis = {
+            "up": "👍",
+            "happy": "😃",
+            "surprised": "😲",
+            "laughing": "😍",
+            "heartEyes": "😂"
+        }
+        if type not in emojis:
+            raise ValueError("Not a valid emoji type")
+        emoji = emojis.get(type, "👍")
         json_data = {
             "data": {
                 "action": "add",
@@ -310,11 +319,10 @@ class BeFake:
                 "uri": name
             }
         }
-        
         res = self.client.post("https://us-central1-alexisbarreyat-bereal.cloudfunctions.net/sendRealMoji", json=json_data, headers={"authorization": f"Bearer {self.token}"})
         return res.content
 
-    def post_instant_realmoji(self, image_file: bytes, post_id: str):
+    def post_instant_realmoji(self, post_id: str, image_file: bytes):
         name = self.upload_realmoji(image_file, "instant")
         json_data = {
             "data": {
@@ -327,4 +335,15 @@ class BeFake:
             }
         }
         res = self.client.post("https://us-central1-alexisbarreyat-bereal.cloudfunctions.net/sendRealMoji", json=json_data, headers={"authorization": f"Bearer {self.token}"})
-        return res.content
+        return res.json()
+    
+    # works also for not friends and unpublic post with given post_id
+    def get_reactions(self, post_id):
+        payload = {
+            "postId": post_id,
+        }
+        res = self.client.get(f"{self.api_url}/content/realmojis",
+            params=payload,
+            headers={"authorization": self.token}
+        )
+        return res
