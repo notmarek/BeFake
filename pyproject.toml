@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+[project]
+name = "BeFake"
+version = "1.0.0"
+authors = [
+  { name="Marek Veselý", email="me@notmarek.com" },
+  { name="OfficialFreak" },
+  { name="Smart123s" },
+  { name="ArtenH" },
+  { name="OfficialBrot" },
+  { name="Péter Tombor" },
+  { name="Benomity" },
+  { name="Jorge Martínez" },
+  { name="jaannnis" }
+]
+description = "BeReal Python API wrapper"
+readme = "README.md"
+requires-python = ">=3.6"
+classifiers = [
+        'Development Status :: 4 - Beta',
+        'Environment :: Console',
+        'Intended Audience :: End Users/Desktop',
+        'Intended Audience :: Developers',
+        'License :: OSI Approved :: The Unlicense (Unlicense)',
+        'Operating System :: OS Independent',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3 :: Only',
+        'Topic :: Internet',
+        'Topic :: Multimedia :: Graphics'
+]
+
+[project.urls]
+"Homepage" = "https://github.com/notmarek/BeFake"
+"Bug Tracker" = "https://github.com/notmarek/BeFake/issues"
