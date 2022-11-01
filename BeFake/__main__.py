@@ -12,8 +12,11 @@ import pendulum
 DATA_DIR = "data"
 
 @click.group()
-def cli():
-    pass
+@click.pass_context
+def cli(ctx):
+    # ensure that ctx.obj exists and is a dict (in case `cli()` is called
+    # by means other than the `if` block below)
+    ctx.ensure_object(dict)
 
 
 @cli.command(help="Login to BeReal")
@@ -292,4 +295,4 @@ def emoji_realmoji(post_id, type, filename):
 
 
 if __name__ == "__main__":
-    cli()
+    cli(obj={})
