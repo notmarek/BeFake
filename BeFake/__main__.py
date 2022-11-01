@@ -48,9 +48,8 @@ def refresh():
     except:
         raise Exception("No token found, are you logged in?")
     bf.refresh_tokens()
-    print("New token: ", bf.token)
+    print(bf.token, end='', flush=True)
     bf.save()
-    print("Token refreshed.")
 
 
 def download_media(client: httpx.Client, item):
