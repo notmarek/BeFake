@@ -1,14 +1,40 @@
+import tempfile
 from base64 import b64decode
 import json
+from typing import Optional
+
 import httpx
 import pendulum
 import hashlib
+import platform
+import os
 from .models.picture import Picture
 from .models.realmoji_picture import RealmojiPicture
 
 from .models.post import Post
 from .models.memory import Memory
 from .models.user import User
+
+
+def _get_config_dir() -> str:
+    """Source: Instaloader (MIT License)
+    https://github.com/instaloader/instaloader/blob/3cc29a4/instaloader/instaloader.py#L30-L39"""
+    if platform.system() == "Windows":
+        # on Windows, use %LOCALAPPDATA%\BeFake
+        localappdata = os.getenv("LOCALAPPDATA")
+        if localappdata is not None:
+            return os.path.join(localappdata, "BeFake")
+    # on Unix, use ~/.config/befake
+    return os.path.join(os.getenv("XDG_CONFIG_HOME", os.path.expanduser("~/.config")), "befake")
+
+
+def get_default_session_filename() -> str:
+    """Returns default token filename for given phone number.
+    Source: Instaloader (MIT License)
+    https://github.com/instaloader/instaloader/blob/3cc29a4/instaloader/instaloader.py#L42-L46"""
+    config_dir = _get_config_dir()
+    token_filename = f"token.txt"
+    return os.path.join(config_dir, token_filename)
 
 
 class BeFake:
@@ -39,11 +65,20 @@ class BeFake:
     def __repr__(self):
         return f"BeFake(user_id={self.user_id})"
 
-    def save(self, file_path: str) -> None:
+    def save(self, file_path: Optional[str] = None) -> None:
+        if file_path is None:
+            file_path = get_default_session_filename()
+        dirname = os.path.dirname(file_path)
+        if dirname != '' and not os.path.exists(dirname):
+            os.makedirs(dirname)
+            os.chmod(dirname, 0o700)
         with open(file_path, "w") as f:
+            os.chmod(file_path, 0o600)
             f.write(self.refresh_token)
 
-    def load(self, file_path: str) -> None:
+    def load(self, file_path: Optional[str] = None) -> None:
+        if file_path is None:
+            file_path = get_default_session_filename()
         with open(file_path, "r") as f:
             self.refresh_token = f.read()
             self.refresh_tokens()

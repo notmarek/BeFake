@@ -23,7 +23,7 @@ def login(phone_number):
     bf.send_otp(phone_number)
     otp = input("Enter otp: ")
     bf.verify_otp(otp)
-    bf.save("token.txt")
+    bf.save()
     print("Login successful.")
     print("You can now try to use the other commands ;)")
 
@@ -31,7 +31,7 @@ def login(phone_number):
 @cli.command(help="Get info about your account")
 def me():
     bf = BeFake()
-    bf.load("token.txt")
+    bf.load()
     user = bf.get_user_info()
     print(user)
     print(user.__dict__)
@@ -41,12 +41,12 @@ def me():
 def refresh():
     bf = BeFake()
     try:
-        bf.load("token.txt")
+        bf.load()
     except:
         raise Exception("No token found, are you logged in?")
     bf.refresh_tokens()
     print("New token: ", bf.token)
-    bf.save("token.txt")
+    bf.save()
     print("Token refreshed.")
 
 
@@ -62,7 +62,7 @@ def download_media(client: httpx.Client, item):
 def feed(feed_id):
     bf = BeFake()
     try:
-        bf.load("token.txt")
+        bf.load()
     except:
         raise Exception("No token found, are you logged in?")
     if feed_id == "friends":
@@ -121,7 +121,7 @@ def feed(feed_id):
 def parse_friends():
     bf = BeFake()
     try:
-        bf.load("token.txt")
+        bf.load()
     except:
         raise Exception("No token found, are you logged in?")
     friends = bf.get_friends()
@@ -145,7 +145,7 @@ def post(primary_path, secondary_path):
     secondary_path = "data/photos/secondary.jpg" if not secondary_path else secondary_path
     bf = BeFake()
     try:
-        bf.load("token.txt")
+        bf.load()
     except Exception as ex:
         raise Exception("No token found, are you logged in?")
     with open("data/photos/primary.png", "rb") as f:
@@ -162,7 +162,7 @@ def post(primary_path, secondary_path):
 def upload(filename):
     bf = BeFake()
     try:
-        bf.load("token.txt")
+        bf.load()
     except Exception as ex:
         raise Exception("No token found, are you logged in?")
     with open(f"data/photos/{filename}", "rb") as f:
@@ -176,7 +176,7 @@ def upload(filename):
 def comment(post_id, content):
     bf = BeFake()
     try:
-        bf.load("token.txt")
+        bf.load()
     except Exception as ex:
         raise Exception("No token found, are you logged in?")
     r = bf.add_comment(post_id, content)
@@ -187,7 +187,7 @@ def comment(post_id, content):
 def screenshot(post_id):
     bf = BeFake()
     try:
-        bf.load("token.txt")
+        bf.load()
     except Exception as ex:
         raise Exception("No token found, are you logged in?")
     r = bf.take_screenshot(post_id)
@@ -197,7 +197,7 @@ def screenshot(post_id):
 def delete_post():
     bf = BeFake()
     try:
-        bf.load("token.txt")
+        bf.load()
     except Exception as ex:
         raise Exception("No token found, are you logged in?")
     r = bf.delete_post()
@@ -208,7 +208,7 @@ def delete_post():
 def change_caption(caption):
     bf = BeFake()
     try:
-        bf.load("token.txt")
+        bf.load()
     except Exception as ex:
         raise Exception("No token found, are you logged in?")
     r = bf.change_caption(caption)
@@ -219,7 +219,7 @@ def change_caption(caption):
 def get_user_profile(user_id):
     bf = BeFake()
     try:
-        bf.load("token.txt")
+        bf.load()
     except Exception as ex:
         raise Exception("No token found, are you logged in?")
     r = bf.get_user_profile(user_id)
@@ -231,7 +231,7 @@ def get_user_profile(user_id):
 def send_push_notification(user_id, username):
     bf = BeFake()
     try:
-        bf.load("token.txt")
+        bf.load()
     except Exception as ex:
         raise Exception("No token found, are you logged in?")
     r = bf.send_capture_in_progress_push(topic=user_id if user_id else None, username=username if username else None)
@@ -243,7 +243,7 @@ def send_push_notification(user_id, username):
 def instant_realmoji(post_id, filename):
     bf = BeFake()
     try:
-        bf.load("token.txt")
+        bf.load()
     except Exception as ex:
         raise Exception("No token found, are you logged in?")
     if not filename:
@@ -259,7 +259,7 @@ def instant_realmoji(post_id, filename):
 def upload_realmoji(type, filename):
     bf = BeFake()
     try:
-        bf.load("token.txt")
+        bf.load()
     except Exception as ex:
         raise Exception("No token found, are you logged in?")
     if not filename:
@@ -278,7 +278,7 @@ def emoji_realmoji(post_id, type, filename):
     type = str(type)
     bf = BeFake()
     try:
-        bf.load("token.txt")
+        bf.load()
     except Exception as ex:
         raise Exception("No token found, are you logged in?")
     if not filename:
