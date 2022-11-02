@@ -61,7 +61,12 @@ def download_media(client: httpx.Client, item):
 
 @cli.command(help="Download a feed")
 @click.argument("feed_id", type=click.Choice(["friends", "discovery", "memories"]))
-def feed(feed_id):
+@click.option("--save-location", help="The paths where the posts should be downloaded")
+@click.option("--realmoji-location", help="The paths where the (non-instant) realmojis should be downloaded")
+@click.option("--instant-realmoji-location", help="The paths where the instant realmojis should be downloaded")
+def feed(feed_id, save_location, realmoji_location, instant_realmoji_location):
+    date_format = 'YYYY-MM-DD_hh-mm-ss'
+
     bf = BeFake()
     try:
         bf.load()
@@ -76,48 +81,52 @@ def feed(feed_id):
     elif feed_id == "memories":
         feed = bf.get_memories_feed()
 
-    os.makedirs(f"{DATA_DIR}/feeds/{feed_id}", exist_ok=True)
     for item in feed:
         if feed_id == "memories":
-            print("saving memory", f"{DATA_DIR}/feeds/memories/{item.memory_day}")
-            os.makedirs(f"{DATA_DIR}/feeds/memories/{item.memory_day}", exist_ok=True)
-            with open(f"{DATA_DIR}/feeds/memories/{item.memory_day}/primary.jpg", "wb") as f:
-                f.write(item.primary_photo.download())
-            with open(f"{DATA_DIR}/feeds/memories/{item.memory_day}/secondary.jpg", "wb") as f:
-                f.write(item.secondary_photo.download())
-            with open(f"{DATA_DIR}/feeds/memories/{item.memory_day}/info.json", "w+") as f:
-                json.dump(item.data_dict, f, indent=4)
-            continue
-        print(f"saving post by {item.user.username}".ljust(50, " "),f"{item.id}")
-        os.makedirs(f"{DATA_DIR}/feeds/{feed_id}/{item.user.username}/{item.id}", exist_ok=True)
+            print("saving memory", item.memory_day)
+            if save_location is None:
+                save_location = f"{DATA_DIR}/feeds/memories/{item.memory_day}"
+            _save_location = save_location.format(date=item.memory_day)
+        else:
+            print(f"saving post by {item.user.username}".ljust(50, " "),f"{item.id}")
+            post_date = item.creation_date.format(date_format)
+            if save_location is None:
+                save_location = f"{DATA_DIR}/feeds/{feed_id}/{item.user.username}/{item.id}"
+            _save_location = save_location.format(user=item.user.username, date=post_date, feed_id=feed_id,
+                                                  post_id=item.id)
 
-        with open(
-            f"{DATA_DIR}/feeds/{feed_id}/{item.user.username}/{item.id}/info.json",
-            "w+",
-        ) as f:
+        os.makedirs(f"{_save_location}", exist_ok=True)
+
+        with open(f"{_save_location}/info.json", "w+") as f:
             f.write(json.dumps(item.data_dict, indent=4))
-
-        with open(
-            f"{DATA_DIR}/feeds/{feed_id}/{item.user.username}/{item.id}/primary.jpg",
-            "wb",
-        ) as f:
+        with open(f"{_save_location}/primary.jpg", "wb") as f:
             f.write(item.primary_photo.download())
-        with open(
-            f"{DATA_DIR}/feeds/{feed_id}/{item.user.username}/{item.id}/secondary.jpg",
-            "wb",
-        ) as f:
+        with open(f"{_save_location}/secondary.jpg", "wb") as f:
             f.write(item.secondary_photo.download())
-        for emoji in item.realmojis:
-            os.makedirs(
-                f"{DATA_DIR}/feeds/{feed_id}/{item.user.username}/{item.id}/reactions/{emoji.type}",
-                exist_ok=True,
-            )
 
-            with open(
-                f"{DATA_DIR}/feeds/{feed_id}/{item.user.username}/{item.id}/reactions/{emoji.type}/{emoji.username}.jpg",
-                "wb",
-            ) as f:
+        if feed_id == "memories":
+            continue
+        for emoji in item.realmojis:
+
+            # Differenciate between instant and non-instant realomji locations
+            _realmoji_location = instant_realmoji_location if emoji.type == 'instant' else realmoji_location
+
+            # Set default value for realmoji location
+            if _realmoji_location is None:
+                _realmoji_location = \
+                    f"{DATA_DIR}/feeds/{feed_id}/{item.user.username}/{item.id}/reactions/{emoji.type}" + \
+                    f"/{emoji.username}.jpg"
+
+            # Format realmoji location
+            _realmoji_location = _realmoji_location.format(user=emoji.username, type=emoji.type, feed_id=feed_id,
+                                                            post_date=post_date, post_user=item.username,
+                                                            date=emoji.creation_date.format(date_format),
+                                                            post_id=item.id)
+
+            os.makedirs(os.path.dirname(_realmoji_location), exist_ok=True)
+            with open(f"{_realmoji_location}.jpg", "wb") as f:
                 f.write(emoji.photo.download())
+
 
 @cli.command(help="Download friends information")
 def parse_friends():
