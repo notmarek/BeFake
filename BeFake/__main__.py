@@ -52,13 +52,6 @@ def refresh():
     bf.save()
 
 
-def download_media(client: httpx.Client, item):
-    return [
-        client.get(item["photoURL"]).content,
-        client.get(item["secondaryPhotoURL"]).content,
-    ]
-
-
 @cli.command(help="Download a feed")
 @click.argument("feed_id", type=click.Choice(["friends", "discovery", "memories"]))
 @click.option("--save-location", help="The paths where the posts should be downloaded")
