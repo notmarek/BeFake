@@ -12,6 +12,8 @@ from urllib.parse import quote_plus
 class Picture(object):
     def __init__(self, data_dict, url=None, width=None, height=None) -> None:
         self.url = data_dict.get("url", url)
+        if self.exists():
+            self.ext = self.url.split('.')[-1]
         self.width = data_dict.get("width", width)
         self.height = data_dict.get("height", height)
 
