@@ -1,4 +1,5 @@
 import json
+import os.path
 from typing import Optional
 
 import httpx
@@ -26,7 +27,7 @@ class Picture(object):
     def download(self, path: Optional[str]):
         r = httpx.get(self.url)
         self.data = r.content
-        if path is not None:
+        if path is not None and not os.path.exists(path):
             with open(path, "wb") as f:
                 f.write(self.data)
         return r.content
