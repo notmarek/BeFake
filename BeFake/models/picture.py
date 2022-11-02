@@ -28,7 +28,7 @@ class Picture(object):
         r = httpx.get(self.url)
         self.data = r.content
         if path is not None and not os.path.exists(path):
-            with open(f"path.{self.ext}", "wb") as f:
+            with open(f"{path}.{self.ext}", "wb") as f:
                 f.write(self.data)
         return r.content
 
