@@ -1,4 +1,7 @@
 import json
+import os.path
+from typing import Optional
+
 import httpx
 import uuid
 import pendulum
@@ -10,6 +13,8 @@ from urllib.parse import quote_plus
 class Picture(object):
     def __init__(self, data_dict, url=None, width=None, height=None) -> None:
         self.url = data_dict.get("url", url)
+        if self.exists():
+            self.ext = self.url.split('.')[-1]
         self.width = data_dict.get("width", width)
         self.height = data_dict.get("height", height)
 
@@ -19,9 +24,12 @@ class Picture(object):
     def exists(self):
         return self.url is not None
     
-    def download(self):
+    def download(self, path: Optional[str]):
         r = httpx.get(self.url)
         self.data = r.content
+        if path is not None and not os.path.exists(path):
+            with open(f"path.{self.ext}", "wb") as f:
+                f.write(self.data)
         return r.content
 
     def upload(

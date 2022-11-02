@@ -7,3 +7,5 @@ feeds
 data/
 
 .DS_Store
+/BeFake.egg-info/
+/build/
