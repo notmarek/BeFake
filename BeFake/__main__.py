@@ -122,23 +122,28 @@ def feed(feed_id, save_location, realmoji_location, instant_realmoji_location):
 
 
 @cli.command(help="Download friends information")
-def parse_friends():
+@click.option("--save-location", help="The directory where the data should be downloaded")
+def parse_friends(save_location):
+    date_format = 'YYYY-MM-DD_hh-mm-ss'
+
     bf = BeFake()
     try:
         bf.load()
     except:
         raise Exception("No token found, are you logged in?")
     friends = bf.get_friends()
-    os.makedirs(f"{DATA_DIR}/friends", exist_ok=True)
+
     for friend in friends:
-        os.makedirs(f"{DATA_DIR}/friends/{friend.username}", exist_ok=True)
-        os.makedirs(f"{DATA_DIR}/friends/{friend.username}/info", exist_ok=True)
-        os.makedirs(f"{DATA_DIR}/friends/{friend.username}/profile_pictures", exist_ok=True)
-        with open(f"{DATA_DIR}/friends/{friend.username}/info/info{unix_timestamp()}.json", "w+") as f:
+        if save_location is None:
+            save_location = f"{DATA_DIR}/friends/{friend.username}"
+        save_location.format(user=friend.username)
+        os.makedirs(f"{save_location}", exist_ok=True)
+        with open(f"{save_location}/info.json", "w+") as f:
             json.dump(friend.data_dict, f, indent=4)
 
         if friend.profile_picture.exists():
-            with open(f"{DATA_DIR}/friends/{friend.username}/profile_pictures/{unix_timestamp()}.jpg", "wb") as f:
+            creation_date = pendulum.from_timestamp(int(friend.profile_picture.url.split('-')[-3])).format(date_format)
+            with open(f"{save_location}/{creation_date}_profile_picture.jpg", "wb") as f:
                 f.write(friend.profile_picture.download())
 
 @cli.command(help="Post the photos under /data/photos to your feed")
