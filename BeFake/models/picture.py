@@ -1,4 +1,6 @@
 import json
+from typing import Optional
+
 import httpx
 import uuid
 import pendulum
@@ -19,9 +21,12 @@ class Picture(object):
     def exists(self):
         return self.url is not None
     
-    def download(self):
+    def download(self, path: Optional[str]):
         r = httpx.get(self.url)
         self.data = r.content
+        if path is not None:
+            with open(path, "wb") as f:
+                f.write(self.data)
         return r.content
 
     def upload(

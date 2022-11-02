@@ -92,10 +92,8 @@ def feed(feed_id, save_location, realmoji_location, instant_realmoji_location):
 
         with open(f"{_save_location}/info.json", "w+") as f:
             f.write(json.dumps(item.data_dict, indent=4))
-        with open(f"{_save_location}/primary.jpg", "wb") as f:
-            f.write(item.primary_photo.download())
-        with open(f"{_save_location}/secondary.jpg", "wb") as f:
-            f.write(item.secondary_photo.download())
+        item.primary_photo.download(f"{_save_location}/primary.jpg")
+        item.secondary_photo.download(f"{_save_location}/secondary.jpg")
 
         if feed_id == "memories":
             continue
@@ -117,8 +115,7 @@ def feed(feed_id, save_location, realmoji_location, instant_realmoji_location):
                                                             post_id=item.id)
 
             os.makedirs(os.path.dirname(_realmoji_location), exist_ok=True)
-            with open(f"{_realmoji_location}.jpg", "wb") as f:
-                f.write(emoji.photo.download())
+            emoji.photo.download(f"{_realmoji_location}.jpg")
 
 
 @cli.command(help="Download friends information")
@@ -143,8 +140,7 @@ def parse_friends(save_location):
 
         if friend.profile_picture.exists():
             creation_date = pendulum.from_timestamp(int(friend.profile_picture.url.split('-')[-3])).format(date_format)
-            with open(f"{save_location}/{creation_date}_profile_picture.jpg", "wb") as f:
-                f.write(friend.profile_picture.download())
+            friend.profile_picture.download(f"{save_location}/{creation_date}_profile_picture.jpg")
 
 @cli.command(help="Post the photos under /data/photos to your feed")
 @click.argument('primary_path', required=False, type=click.STRING)
