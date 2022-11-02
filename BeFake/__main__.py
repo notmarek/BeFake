@@ -74,17 +74,27 @@ def feed(feed_id, save_location, realmoji_location, instant_realmoji_location):
     elif feed_id == "memories":
         feed = bf.get_memories_feed()
 
+
+    if save_location is None:
+        if feed_id == "memories":
+            save_location = f"{DATA_DIR}" + "/feeds/memories/{date}"
+        else:
+            save_location = f"{DATA_DIR}" + "/feeds/{feed_id}/{user}/{post_id}"
+
+    if realmoji_location is None:
+        realmoji_location = \
+            f"{DATA_DIR}" + \
+            "/feeds/{feed_id}/{post_user}/{post_id}/reactions/{type}/{user}"
+
+    instant_realmoji_location = realmoji_location if instant_realmoji_location is None else instant_realmoji_location
+
     for item in feed:
         if feed_id == "memories":
             print("saving memory", item.memory_day)
-            if save_location is None:
-                save_location = f"{DATA_DIR}/feeds/memories/{item.memory_day}"
             _save_location = save_location.format(date=item.memory_day)
         else:
             print(f"saving post by {item.user.username}".ljust(50, " "),f"{item.id}")
             post_date = item.creation_date.format(date_format)
-            if save_location is None:
-                save_location = f"{DATA_DIR}/feeds/{feed_id}/{item.user.username}/{item.id}"
             _save_location = save_location.format(user=item.user.username, date=post_date, feed_id=feed_id,
                                                   post_id=item.id)
 
@@ -99,15 +109,8 @@ def feed(feed_id, save_location, realmoji_location, instant_realmoji_location):
         if feed_id == "memories":
             continue
         for emoji in item.realmojis:
-
             # Differenciate between instant and non-instant realomji locations
             _realmoji_location = instant_realmoji_location if emoji.type == 'instant' else realmoji_location
-
-            # Set default value for realmoji location
-            if _realmoji_location is None:
-                _realmoji_location = \
-                    f"{DATA_DIR}/feeds/{feed_id}/{item.user.username}/{item.id}/reactions/{emoji.type}" + \
-                    f"/{emoji.username}.{emoji.photo.ext}"
 
             # Format realmoji location
             _realmoji_location = _realmoji_location.format(user=emoji.username, type=emoji.type, feed_id=feed_id,
@@ -131,18 +134,19 @@ def parse_friends(save_location):
         raise Exception("No token found, are you logged in?")
     friends = bf.get_friends()
 
+    if save_location is None:
+        save_location = f"{DATA_DIR}" + "/friends/{user}"
+
     for friend in friends:
-        if save_location is None:
-            save_location = f"{DATA_DIR}/friends/{friend.username}"
-        save_location.format(user=friend.username)
-        os.makedirs(f"{save_location}", exist_ok=True)
-        with open(f"{save_location}/info.json", "w+") as f:
+        _save_location = save_location.format(user=friend.username)
+        os.makedirs(f"{_save_location}", exist_ok=True)
+        with open(f"{_save_location}/info.json", "w+") as f:
             json.dump(friend.data_dict, f, indent=4)
 
         if friend.profile_picture.exists():
             creation_date = pendulum.from_timestamp(int(friend.profile_picture.url.split('-')[-3])).format(date_format)
             ext = friend.profile_picture.ext
-            friend.profile_picture.download(f"{save_location}/{creation_date}_profile_picture.{ext}")
+            friend.profile_picture.download(f"{_save_location}/{creation_date}_profile_picture.{ext}")
 
 @cli.command(help="Post the photos under /data/photos to your feed")
 @click.argument('primary_path', required=False, type=click.STRING)
