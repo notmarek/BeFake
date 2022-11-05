@@ -74,7 +74,8 @@ def feed(feed_id, save_location, realmoji_location, instant_realmoji_location):
     elif feed_id == "memories":
         feed = bf.get_memories_feed()
 
-
+    # Add fallback location for save_location and realmoji_location parameters if they were not specified by the user.
+    # These strings will get formatted later, that's why the "f" is missing before the strings.
     if save_location is None:
         if feed_id == "memories":
             save_location = f"{DATA_DIR}" + "/feeds/memories/{date}"
