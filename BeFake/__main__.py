@@ -144,7 +144,7 @@ def parse_friends(save_location):
             json.dump(friend.data_dict, f, indent=4)
 
         if friend.profile_picture.exists():
-            creation_date = pendulum.from_timestamp(int(friend.profile_picture.url.split('-')[-3])).format(date_format)
+            creation_date = friend.profile_picture.get_date().format(date_format)
             friend.profile_picture.download(f"{_save_location}/{creation_date}_profile_picture")
 
 @cli.command(help="Post the photos under /data/photos to your feed")
