@@ -25,9 +25,13 @@ class Picture(object):
         return self.url is not None
     
     def download(self, path: Optional[str]):
+        # don't re-download already saved pictures
+        if path is not None and os.path.exists(path):
+            return
+
         r = httpx.get(self.url)
         self.data = r.content
-        if path is not None and not os.path.exists(path):
+        if path is not None:
             with open(f"{path}.{self.ext}", "wb") as f:
                 f.write(self.data)
         return r.content
