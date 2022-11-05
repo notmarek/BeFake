@@ -17,9 +17,10 @@ The following keys are supported (they will be replaced with their value):
 ## Feed - Friends and Discovery
 
 ```bash
-befake feed friends \ 
+befake feed \ 
   --save-location "data/feeds/friends/{user}/{post_id}" \ 
-  --realmoji-location "data/feeds/friends/{post_user}/{post_id}/{user}"
+  --realmoji-location "data/feeds/friends/{post_user}/{post_id}/{user}" \
+  <friends|discovery>
 ```
 
 - `--save-location`: specifies the path of the post (`primary.jpg` and `secondary.jpg`) and it's metadata (`info.json`)
