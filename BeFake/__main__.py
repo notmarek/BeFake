@@ -1,5 +1,6 @@
 import json
 import os
+import sys
 from .BeFake import BeFake
 from .models.realmoji_picture import RealmojiPicture
 from .utils import *
@@ -58,6 +59,10 @@ def refresh():
 @click.option("--realmoji-location", help="The paths where the (non-instant) realmojis should be downloaded")
 @click.option("--instant-realmoji-location", help="The paths where the instant realmojis should be downloaded")
 def feed(feed_id, save_location, realmoji_location, instant_realmoji_location):
+    result = _feed(feed_id, save_location, realmoji_location, instant_realmoji_location)
+    click.echo(result)
+
+def _feed(feed_id, save_location, realmoji_location, instant_realmoji_location):
     date_format = 'YYYY-MM-DD_hh-mm-ss'
 
     bf = BeFake()
@@ -304,6 +309,34 @@ def emoji_realmoji(post_id, type, filename):
     r2 = bf.post_realmoji(post_id, type=type, name=r1)
     print(r2)
 
+
+
+@cli.command(help="infinitly download your friends posts")
+def infinite_reload():
+    bf = BeFake()
+    try:
+        bf.load()
+    except Exception as ex:
+        raise Exception("No token found, are you logged in?")
+    print("loaded")
+    cur_feed = bf.get_friends_feed(raw=True)
+    i = 0
+    while True:
+        bf.refresh_tokens()
+        bf.save()
+        print(f"chunk {i} at time {datetime.datetime.now()}")
+        for j in range(100):
+            print(j)
+            time.sleep(5)
+            sys.stdout.write("\033[F")
+            try:
+                new_feed = bf.get_friends_feed(raw=True)
+            except httpx.ReadTimeout:
+                print("timeout")
+                continue
+            if cur_feed != new_feed:
+                cur_feed = new_feed
+                _feed("friends", None, None, None)
 
 if __name__ == "__main__":
     cli(obj={})

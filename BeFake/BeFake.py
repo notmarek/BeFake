@@ -152,14 +152,17 @@ class BeFake:
         )
         return res.json()
 
-    def get_friends_feed(self):
+    def get_friends_feed(self, raw=False):
         res = self.client.get(
             f"{self.api_url}/feeds/friends",
             headers={
                 "authorization": self.token,
             },
         ).json()
+        if raw:
+            return res
         return [Post(p, self) for p in res]
+    
 
     def get_discovery_feed(self):
         res = self.client.get(
