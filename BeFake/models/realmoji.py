@@ -22,8 +22,11 @@ class RealMoji(object):
         # date when the realmoji was created
         if self.type == 'instant':
             self.creation_date = self.date
-        else:
-            self.creation_date = self.photo.get_date()
 
     def __repr__(self) -> str:
         return f"<RealMoji {self.id}>"
+
+    def get_creation_date(self):
+        if not hasattr(self, 'creation_date'):
+            self.creation_date = self.photo.get_date()
+        return self.creation_date
