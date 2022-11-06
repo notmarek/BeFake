@@ -23,9 +23,7 @@ class RealMoji(object):
         if self.type == 'instant':
             self.creation_date = self.date
         else:
-            self.creation_date = int(self.photo.url.split('-')[-1].split('.')[0])
-            if self.creation_date is not None:
-                self.creation_date = pendulum.from_timestamp(self.creation_date)
+            self.creation_date = self.photo.get_date()
 
     def __repr__(self) -> str:
         return f"<RealMoji {self.id}>"
