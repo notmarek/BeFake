@@ -15,6 +15,12 @@ pip install git+https://github.com/notmarek/BeFake
 befake [OPTIONS] COMMAND [ARGS]...
 ```
 
+## Projects using this library
+* [BeFake Dashboard](https://github.com/ArtrenH/BeFake-Dashboard) visualize your bereal antics in a nice way using Flask!
+
+## Related projects
+* [TooFake](https://github.com/s-alad/toofake) BeReal experience in your browser!
+
 
 ## Developement
 
