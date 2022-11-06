@@ -1,3 +1,4 @@
+import datetime
 import json
 import os.path
 from typing import Optional
@@ -25,9 +26,13 @@ class Picture(object):
         return self.url is not None
     
     def download(self, path: Optional[str]):
+        # don't re-download already saved pictures
+        if path is not None and os.path.exists(path):
+            return
+
         r = httpx.get(self.url)
         self.data = r.content
-        if path is not None and not os.path.exists(path):
+        if path is not None:
             with open(f"{path}.{self.ext}", "wb") as f:
                 f.write(self.data)
         return r.content
@@ -93,3 +98,15 @@ class Picture(object):
         # https://storage.bere.al/Photos/2lzXSG00xMNWR4cKFuGAzdUbOXM2/bereal/3a0fa270-bd7b-4dfd-8af0-d5a23a291999-1660586403.jpg
         # Photos%2F2lzXSG00xMNWR4cKFuGAzdUbOXM2%2Fbereal%2F3a0fa270-bd7b-4dfd-8af0-d5a23a291999-1660586403.jpg
         # https://firebasestorage.googleapis.com/v0/b/storage.bere.al/o/Photos%2F2lzXSG00xMNWR4cKFuGAzdUbOXM2%2Fbereal%2F3a0fa270-bd7b-4dfd-8af0-d5a23a291999-1660586403.jpg?uploadType=resumable&name=Photos%2F2lzXSG00xMNWR4cKFuGAzdUbOXM2%2Fbereal%2F3a0fa270-bd7b-4dfd-8af0-d5a23a291999-1660586403.jpg
+
+    def get_date(self):
+        if hasattr(self, 'date'):
+            return self.date
+        r = httpx.head(self.url)
+
+        # https://stackoverflow.com/a/71637523
+        url_time = r.headers.get('Last-Modified')
+        last_updated_pattern = "%a, %d %b %Y %H:%M:%S %Z"
+        timestamp = int(datetime.datetime.strptime(url_time, last_updated_pattern).timestamp())
+        self.date = pendulum.from_timestamp(timestamp)
+        return self.date
