@@ -2,8 +2,9 @@
 from .user import User
 from .picture import Picture
 from .realmoji import RealMoji
+from .screenshot_v2 import ScreenshotV2
+from .comment import Comment
 import pendulum
-from screenshot_v2 import ScreenshotV2
 
 
 class Post(object):
@@ -43,10 +44,10 @@ class Post(object):
         self.taken_at = data_dict.get("takenAt", None)
         if self.taken_at is not None:
             self.taken_at = pendulum.from_timestamp(self.taken_at["_seconds"])
-        self.comment = data_dict.get("comment", None)
+        self.comment = [Comment(comment, befake) for comment in data_dict.get("comment", None)]
         self.realmojis = [RealMoji(rm, befake) for rm in data_dict.get("realMojis", [])]
         self.screenshots = data_dict.get("screenshots", None)  # list containing ids of users that screenshotted
-        self.screenshots_v2 = [ScreenshotV2(ss) for ss in data_dict.get("screenshotsV2", None)]
+        self.screenshots_v2 = [ScreenshotV2(s, befake) for s in data_dict.get("screenshotsV2", None)]
         self.data_dict = data_dict
 
     def __repr__(self) -> str:
