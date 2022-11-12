@@ -1,14 +1,8 @@
 import json
 import os
 from .BeFake import BeFake
-from .models.realmoji_picture import RealmojiPicture
-from .utils import *
 from .models.post import Post
-
 import click
-import httpx
-
-import pendulum
 
 DATA_DIR = "data"
 
