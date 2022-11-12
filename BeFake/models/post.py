@@ -1,9 +1,10 @@
-#from ..BeFake import BeFake
+# from ..BeFake import BeFake
 from .user import User
 from .picture import Picture
 from .realmoji import RealMoji
+from .screenshot_v2 import ScreenshotV2
+from .comment import Comment
 import pendulum
-import json
 
 
 class Post(object):
@@ -43,34 +44,57 @@ class Post(object):
         self.taken_at = data_dict.get("takenAt", None)
         if self.taken_at is not None:
             self.taken_at = pendulum.from_timestamp(self.taken_at["_seconds"])
-        self.comment = data_dict.get("comment", None)  # TODO: figure out what this is
+        self.comment = [Comment(comment, befake) for comment in data_dict.get("comment", None)]
         self.realmojis = [RealMoji(rm, befake) for rm in data_dict.get("realMojis", [])]
-        self.screenshots = data_dict.get(
-            "screenshots", None
-        )  # TODO: figure out what this does
-        self.screenshots_v2 = data_dict.get(
-            "screenshotsV2", None
-        )  # TODO: figure out what this does
+        self.screenshots = data_dict.get("screenshots", None)  # list containing ids of users that screenshotted
+        self.screenshots_v2 = [ScreenshotV2(s, befake) for s in data_dict.get("screenshotsV2", None)]
         self.data_dict = data_dict
 
     def __repr__(self) -> str:
         return f"<Post {self.id}>"
 
-
-    def create(
-        self,
-        primary: bytes,
-        secondary: bytes,
-        caption="",
-        retakes=0,
-        taken_at=None,
-        location={"latitude": "37.2297175", "longitude": "-115.7911082"},
-        is_public=False,
-        is_late=False,
+    def create_post(
+            self,
+            primary: bytes,
+            secondary: bytes,
+            is_late: bool,
+            is_public: bool,
+            caption: str,
+            location,
+            retakes=0,
+            taken_at=None,
     ):
-        res = self.bf.create_post(
-            primary, secondary, is_late, is_public, caption, location, retakes, taken_at
-        )
+        if taken_at is None:
+            now = pendulum.now()
+            taken_at = f"{now.to_date_string()}T{now.to_time_string()}Z"
+
+        primary_picture = Picture({})
+        primary_picture.upload(self, primary)
+        secondary_picture = Picture({})
+        secondary_picture.upload(self, secondary, True)
+
+        json_data = {
+            "isPublic": is_public,
+            "isLate": is_late,
+            "retakeCounter": retakes,
+            "takenAt": taken_at,
+            "location": location,
+            "caption": caption,
+            "backCamera": {
+                "bucket": "storage.bere.al",
+                "height": primary_picture.height,
+                "width": primary_picture.width,
+                "path": primary_picture.url.replace("https://storage.bere.al/", ""),
+            },
+            "frontCamera": {
+                "bucket": "storage.bere.al",
+                "height": secondary_picture.height,
+                "width": secondary_picture.width,
+                "path": secondary_picture.url.replace("https://storage.bere.al/", ""),
+            },
+        }
+        res = self.client.post(f"{self.api_url}/content/post", json=json_data, headers={"authorization": self.token})
+
         self.primary_photo = Picture(res["primary"])
         self.secondary_photo = Picture(res["secondary"])
         self.id = res.get("id", None)
@@ -84,3 +108,5 @@ class Post(object):
             self.taken_at = pendulum.parse(self.taken_at)
         self.location = res.get("location", None)
         self.user = User(res.get("user", {}), self.bf)
+
+        return res.content

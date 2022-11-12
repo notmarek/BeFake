@@ -1,13 +1,8 @@
 import json
 import os
 from .BeFake import BeFake
-from .models.realmoji_picture import RealmojiPicture
-from .utils import *
-
+from .models.post import Post
 import click
-import httpx
-
-import pendulum
 
 DATA_DIR = "data"
 
@@ -166,7 +161,7 @@ def post(primary_path, secondary_path):
         primary_bytes = f.read()
     with open("data/photos/secondary.png", "rb") as f:
         secondary_bytes = f.read()
-    r = bf.create_post(
+    r = Post.create_post(
         primary=primary_bytes, secondary=secondary_bytes,
         is_late=False, is_public=False, caption="Insert your caption here", location={"latitude": "0", "longitude": "0"}, retakes=0)
     print(r)
@@ -280,7 +275,7 @@ def upload_realmoji(type, filename):
         filename = f"{type}.jpg"
     with open(f"data/photos/{filename}", "rb") as f:
         data = f.read()
-    r = bf.upload_realmoji(data, type=type)
+    r = bf.upload_realmoji(data, emoji_type=type)
     print(r)
 
 # currently broken, gives internal server error
@@ -300,8 +295,8 @@ def emoji_realmoji(post_id, type, filename):
     with open(f"data/photos/{filename}", "rb") as f:
         data = f.read()
     # we don't have any method to know which realmojis (mapped to a type) the user already uploaded, we think, the client just stores the urls to uploaded realmojis and sends them...
-    r1 = bf.upload_realmoji(data, type=type)
-    r2 = bf.post_realmoji(post_id, type=type, name=r1)
+    r1 = bf.upload_realmoji(data, emoji_type=type)
+    r2 = bf.post_realmoji(post_id, emoji_type=type, name=r1)
     print(r2)
 
 
