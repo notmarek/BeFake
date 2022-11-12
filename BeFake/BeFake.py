@@ -1,4 +1,3 @@
-import tempfile
 from base64 import b64decode
 import json
 from typing import Optional
@@ -39,18 +38,18 @@ def get_default_session_filename() -> str:
 
 class BeFake:
     def __init__(
-        self,
-        refresh_token=None,
-        proxies=None,
-        disable_ssl=False,
-        api_url="https://mobile.bereal.com/api",
-        google_api_key="AIzaSyDwjfEeparokD7sXPVQli9NsTuhT6fJ6iA",
+            self,
+            refresh_token=None,
+            proxies=None,
+            disable_ssl=False,
+            api_url="https://mobile.bereal.com/api",
+            google_api_key="AIzaSyDwjfEeparokD7sXPVQli9NsTuhT6fJ6iA",
     ) -> None:
         self.client = httpx.Client(
             proxies=proxies,
             verify=not disable_ssl,
             headers={
-                #"user-agent": "AlexisBarreyat.BeReal/0.24.0 iPhone/16.0.2 hw/iPhone12_8 (GTMSUF/1)",
+                # "user-agent": "AlexisBarreyat.BeReal/0.24.0 iPhone/16.0.2 hw/iPhone12_8 (GTMSUF/1)",
                 "user-agent": "BeReal/0.25.1 (iPhone; iOS 16.0.2; Scale/2.00)",
                 "x-ios-bundle-identifier": "AlexisBarreyat.BeReal",
             },
@@ -147,9 +146,9 @@ class BeFake:
         # here for example we have a firebase-instance-id-token header with the value from the next line, that we can just ignore (but maybe we need it later, there seem to be some changes to the API especially endpoints moving tho the cloudfunctions.net server)
         # cTn8odwxQo6DR0WFVnM9TJ:APA91bGV86nmQUkqnLfFv18IhpOak1x02sYMmKvpUAqhdfkT9Ofg29BXKXS2mbt9oE-LoHiiKViXw75xKFLeOxhb68wwvPCJF79z7V5GbCsIQi7XH1RSD8ItcznqM_qldSDjghf5N8Uo
         res = self.client.post("https://us-central1-alexisbarreyat-bereal.cloudfunctions.net/getUserProfile",
-            json=payload,
-            headers={"authorization": f"Bearer {self.token}"}
-        )
+                               json=payload,
+                               headers={"authorization": f"Bearer {self.token}"}
+                               )
         return res.json()
 
     def get_friends_feed(self):
@@ -187,7 +186,7 @@ class BeFake:
             },
         ).json()
         return res
-    
+
     def delete_post(self):
         res = self.client.post(
             "https://us-central1-alexisbarreyat-bereal.cloudfunctions.net/deleteBeReal",
@@ -307,62 +306,20 @@ class BeFake:
         ).json()
         return res
 
-    def create_post(
-        self,
-        primary: bytes,
-        secondary: bytes,
-        is_late: bool,
-        is_public: bool,
-        caption: str,
-        location,
-        retakes=0,
-        taken_at=None,
-    ):
-        if taken_at is None:
-            now = pendulum.now()
-            taken_at = f"{now.to_date_string()}T{now.to_time_string()}Z"
-
-        primary_picture = Picture({})
-        primary_picture.upload(self, primary)
-        secondary_picture = Picture({})
-        secondary_picture.upload(self, secondary, True)
-
-        json_data = {
-            "isPublic": is_public,
-            "isLate": is_late,
-            "retakeCounter": retakes,
-            "takenAt": taken_at,
-            "location": location,
-            "caption": caption,
-            "backCamera": {
-                "bucket": "storage.bere.al",
-                "height": primary_picture.height,
-                "width": primary_picture.width,
-                "path": primary_picture.url.replace("https://storage.bere.al/", ""),
-            },
-            "frontCamera": {
-                "bucket": "storage.bere.al",
-                "height": secondary_picture.height,
-                "width": secondary_picture.width,
-                "path": secondary_picture.url.replace("https://storage.bere.al/", ""),
-            },
-        }
-        res = self.client.post(f"{self.api_url}/content/post", json=json_data, headers={"authorization": self.token})
-        return res.content
-    
     def upload(self, data: bytes):
         file = Picture({})
         file.upload(self, data)
         print(file.url)
         return file
-    
+
     def take_screenshot(self, post_id):
         payload = {
             "postId": post_id,
         }
-        res = self.client.post(f"{self.api_url}/content/screenshots", params=payload, headers={"authorization": self.token})
+        res = self.client.post(f"{self.api_url}/content/screenshots", params=payload,
+                               headers={"authorization": self.token})
         return res.content
-    
+
     def add_comment(self, post_id, comment):
         payload = {
             "postId": post_id,
@@ -370,19 +327,21 @@ class BeFake:
         data = {
             "content": comment,
         }
-        res = self.client.post(f"{self.api_url}/content/comments", params=payload, data=data, headers={"authorization": self.token})
+        res = self.client.post(f"{self.api_url}/content/comments", params=payload, data=data,
+                               headers={"authorization": self.token})
         return res.json()
 
-    def upload_realmoji(self, image_file: bytes, type: str):
+    def upload_realmoji(self, image_file: bytes, emoji_type: str):
         picture = RealmojiPicture({})
-        name = picture.upload(self, image_file, type)
+        name = picture.upload(self, image_file, emoji_type)
         return name
+
     # currently gives server errors
     def post_realmoji(
-        self,
-        post_id: str,
-        type: str,
-        name: str
+            self,
+            post_id: str,
+            emoji_type: str,
+            name: str
     ):
         emojis = {
             "up": "👍",
@@ -391,20 +350,21 @@ class BeFake:
             "laughing": "😍",
             "heartEyes": "😂"
         }
-        if type not in emojis:
+        if emoji_type not in emojis:
             raise ValueError("Not a valid emoji type")
-        emoji = emojis.get(type, "👍")
+        emoji = emojis.get(emoji_type, "👍")
         json_data = {
             "data": {
                 "action": "add",
                 "emoji": emoji,
                 "ownerId": self.user_id,
                 "photoId": post_id,
-                "type": type,
+                "type": emoji_type,
                 "uri": name
             }
         }
-        res = self.client.post("https://us-central1-alexisbarreyat-bereal.cloudfunctions.net/sendRealMoji", json=json_data, headers={"authorization": f"Bearer {self.token}"})
+        res = self.client.post("https://us-central1-alexisbarreyat-bereal.cloudfunctions.net/sendRealMoji",
+                               json=json_data, headers={"authorization": f"Bearer {self.token}"})
         return res.content
 
     def post_instant_realmoji(self, post_id: str, image_file: bytes):
@@ -419,7 +379,8 @@ class BeFake:
                 "uri": name
             }
         }
-        res = self.client.post("https://us-central1-alexisbarreyat-bereal.cloudfunctions.net/sendRealMoji", json=json_data, headers={"authorization": f"Bearer {self.token}"})
+        res = self.client.post("https://us-central1-alexisbarreyat-bereal.cloudfunctions.net/sendRealMoji",
+                               json=json_data, headers={"authorization": f"Bearer {self.token}"})
         return res.json()
 
     # works also for not friends and unpublic post with given post_id
@@ -428,7 +389,7 @@ class BeFake:
             "postId": post_id,
         }
         res = self.client.get(f"{self.api_url}/content/realmojis",
-            params=payload,
-            headers={"authorization": self.token}
-        )
+                              params=payload,
+                              headers={"authorization": self.token}
+                              )
         return res
