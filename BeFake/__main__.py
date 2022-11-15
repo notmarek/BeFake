@@ -53,7 +53,7 @@ def refresh():
 @click.option("--realmoji-location", help="The paths where the (non-instant) realmojis should be downloaded")
 @click.option("--instant-realmoji-location", help="The paths where the instant realmojis should be downloaded")
 def feed(feed_id, save_location, realmoji_location, instant_realmoji_location):
-    date_format = 'YYYY-MM-DD_hh-mm-ss'
+    date_format = 'YYYY-MM-DD_HH-mm-ss'
 
     bf = BeFake()
     try:
@@ -124,7 +124,7 @@ def feed(feed_id, save_location, realmoji_location, instant_realmoji_location):
 @cli.command(help="Download friends information")
 @click.option("--save-location", help="The directory where the data should be downloaded")
 def parse_friends(save_location):
-    date_format = 'YYYY-MM-DD_hh-mm-ss'
+    date_format = 'YYYY-MM-DD_HH-mm-ss'
 
     bf = BeFake()
     try:
