@@ -25,16 +25,31 @@ class Picture(object):
     def exists(self):
         return self.url is not None
     
-    def download(self, path: Optional[str]):
+    def download(self, path: Optional[str], ext: Optional[str] = 'jpg'):
+        if ext:
+            # with jpg/jpeg, the file extension is usually jpg, but the PIL format name is jpeg
+            if ext in ['jpg', 'jpeg']:
+                file_ext = 'jpg'
+                ext_type = 'jpeg'
+            else:
+                file_ext = ext
+                ext_type = ext
+        else:
+            file_ext = self.ext
+            ext_type = self.ext
+
         # don't re-download already saved pictures
-        if path is not None and os.path.exists(f"{path}.{self.ext}"):
+        if path is not None and os.path.exists(f"{path}.{file_ext}"):
             return
 
         r = httpx.get(self.url)
         self.data = r.content
-        if path is not None:
-            with open(f"{path}.{self.ext}", "wb") as f:
-                f.write(self.data)
+
+        # borrowed from https://stackoverflow.com/questions/32908639/open-pil-image-from-byte-file
+        if path:
+            img = Image.open(io.BytesIO(r.content))
+            img.save(f"{path}.{file_ext}", ext_type)
+            self.ext = file_ext
         return r.content
 
     def upload(
