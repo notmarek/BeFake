@@ -51,6 +51,7 @@ class Picture(object):
             if ext:
                 # borrowed from https://stackoverflow.com/questions/32908639/open-pil-image-from-byte-file
                 img = Image.open(io.BytesIO(r.content))
+                img = img.convert('RGB')
                 img.save(f"{path}.{file_ext}", ext_type)
                 self.ext = file_ext
             else:
