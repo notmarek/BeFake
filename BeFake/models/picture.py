@@ -18,6 +18,8 @@ class Picture(object):
             self.ext = self.url.split('.')[-1]
         self.width = data_dict.get("width", width)
         self.height = data_dict.get("height", height)
+        self.date = None
+        self.data = None
 
     def __repr__(self) -> str:
         return f"<Image {self.url} {self.width}x{self.height}>"
@@ -25,9 +27,9 @@ class Picture(object):
     def exists(self):
         return self.url is not None
     
-    def download(self, path: Optional[str], ext: Optional[str] = 'jpg'):
+    def download(self, path: Optional[str], ext=None):
         if ext:
-            # with jpg/jpeg, the file extension is usually jpg, but the PIL format name is jpeg
+            # with jpg/jpeg, the file extension is conventionally jpg, but the PIL format name is jpeg
             if ext in ['jpg', 'jpeg']:
                 file_ext = 'jpg'
                 ext_type = 'jpeg'
@@ -39,17 +41,23 @@ class Picture(object):
             ext_type = self.ext
 
         # don't re-download already saved pictures
-        if path is not None and os.path.exists(f"{path}.{file_ext}"):
+        if path and os.path.exists(f"{path}.{file_ext}"):
             return
 
         r = httpx.get(self.url)
         self.data = r.content
 
-        # borrowed from https://stackoverflow.com/questions/32908639/open-pil-image-from-byte-file
         if path:
-            img = Image.open(io.BytesIO(r.content))
-            img.save(f"{path}.{file_ext}", ext_type)
-            self.ext = file_ext
+            if ext:
+                # borrowed from https://stackoverflow.com/questions/32908639/open-pil-image-from-byte-file
+                img = Image.open(io.BytesIO(r.content))
+                img = img.convert('RGB')
+                img.save(f"{path}.{file_ext}", ext_type)
+                self.ext = file_ext
+            else:
+                with open(f"{path}.{self.ext}", "wb") as f:
+                    f.write(self.data)
+
         return r.content
 
     def upload(
