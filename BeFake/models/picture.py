@@ -123,7 +123,7 @@ class Picture(object):
         # https://firebasestorage.googleapis.com/v0/b/storage.bere.al/o/Photos%2F2lzXSG00xMNWR4cKFuGAzdUbOXM2%2Fbereal%2F3a0fa270-bd7b-4dfd-8af0-d5a23a291999-1660586403.jpg?uploadType=resumable&name=Photos%2F2lzXSG00xMNWR4cKFuGAzdUbOXM2%2Fbereal%2F3a0fa270-bd7b-4dfd-8af0-d5a23a291999-1660586403.jpg
 
     def get_date(self):
-        if hasattr(self, 'date'):
+        if self.date:
             return self.date
         r = httpx.head(self.url)
 
