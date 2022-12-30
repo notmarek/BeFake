@@ -157,9 +157,9 @@ def post(primary_path, secondary_path):
         bf.load()
     except Exception as ex:
         raise Exception("No token found, are you logged in?")
-    with open("data/photos/primary.png", "rb") as f:
+    with open(primary_path, "rb") as f:
         primary_bytes = f.read()
-    with open("data/photos/secondary.png", "rb") as f:
+    with open(secondary_path, "rb") as f:
         secondary_bytes = f.read()
     r = Post.create_post(
         primary=primary_bytes, secondary=secondary_bytes,
