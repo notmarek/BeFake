@@ -31,6 +31,10 @@ def get_default_session_filename() -> str:
     """Returns default token filename for given phone number.
     Source: Instaloader (MIT License)
     https://github.com/instaloader/instaloader/blob/3cc29a4/instaloader/instaloader.py#L42-L46"""
+
+    if os.environ.get('IS_DOCKER', False):
+        return '/data/token.txt'
+
     config_dir = _get_config_dir()
     token_filename = f"token.txt"
     return os.path.join(config_dir, token_filename)

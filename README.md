@@ -15,6 +15,11 @@ pip install git+https://github.com/notmarek/BeFake
 befake [OPTIONS] COMMAND [ARGS]...
 ```
 
+## Docker
+```bash
+docker run -v "{HOST_DATA_DIRECTORY}:/data" -v "{TOKEN}:/data/token.txt" notmarek/BeFake {command}
+```
+
 ## Projects using this library
 * [BeFake Dashboard](https://github.com/ArtrenH/BeFake-Dashboard) visualize your bereal antics in a nice way using Flask!
 

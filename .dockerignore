@@ -1,0 +1,11 @@
+.venv
+.idea/
+__pycache__
+token.txt
+feeds
+
+data/
+
+.DS_Store
+/BeFake.egg-info/
+/build/
