@@ -1,7 +1,7 @@
 import json
 import os
 from .BeFake import BeFake
-from .models.post import Post
+from .models.post import Post, Location
 import click
 
 DATA_DIR = "data"
@@ -48,7 +48,7 @@ def refresh():
 
 
 @cli.command(help="Download a feed")
-@click.argument("feed_id", type=click.Choice(["friends", "discovery", "memories"]))
+@click.argument("feed_id", type=click.Choice(["friends", "friends-of-friends", "discovery", "memories"]))
 @click.option("--save-location", help="The paths where the posts should be downloaded")
 @click.option("--realmoji-location", help="The paths where the (non-instant) realmojis should be downloaded")
 @click.option("--instant-realmoji-location", help="The paths where the instant realmojis should be downloaded")
@@ -62,10 +62,10 @@ def feed(feed_id, save_location, realmoji_location, instant_realmoji_location):
         raise Exception("No token found, are you logged in?")
     if feed_id == "friends":
         feed = bf.get_friends_feed()
-
+    elif feed_id == "friends-of-friends":
+        feed = bf.get_fof_feed()
     elif feed_id == "discovery":
         feed = bf.get_discovery_feed()
-
     elif feed_id == "memories":
         feed = bf.get_memories_feed()
 
@@ -132,7 +132,6 @@ def parse_friends(save_location):
     except:
         raise Exception("No token found, are you logged in?")
     friends = bf.get_friends()
-
     if save_location is None:
         save_location = f"{DATA_DIR}" + "/friends/{user}"
 
@@ -147,9 +146,10 @@ def parse_friends(save_location):
             friend.profile_picture.download(f"{_save_location}/{creation_date}_profile_picture")
 
 @cli.command(help="Post the photos under /data/photos to your feed")
+@click.option('visibility', '--visibility', "-v", type=click.Choice(['friends', 'friends-of-friends', 'public']), default='friends', show_default=True, help="Set post visibility")
 @click.argument('primary_path', required=False, type=click.STRING)
 @click.argument('secondary_path', required=False, type=click.STRING)
-def post(primary_path, secondary_path):
+def post(visibility, primary_path, secondary_path):
     primary_path = "data/photos/primary.jpg" if not primary_path else primary_path
     secondary_path = "data/photos/secondary.jpg" if not secondary_path else secondary_path
     bf = BeFake()
@@ -157,13 +157,11 @@ def post(primary_path, secondary_path):
         bf.load()
     except Exception as ex:
         raise Exception("No token found, are you logged in?")
-    with open("data/photos/primary.png", "rb") as f:
+    with open("data/photos/primary.jpg", "rb") as f:
         primary_bytes = f.read()
-    with open("data/photos/secondary.png", "rb") as f:
+    with open("data/photos/secondary.jpg", "rb") as f:
         secondary_bytes = f.read()
-    r = Post.create_post(
-        primary=primary_bytes, secondary=secondary_bytes,
-        is_late=False, is_public=False, caption="Insert your caption here", location={"latitude": "0", "longitude": "0"}, retakes=0)
+    r = Post.create_post(bf, primary=primary_bytes, secondary=secondary_bytes, is_late=False, visibility=visibility, caption="Insert your caption here", location=Location(0,0), retakes=0)
     print(r)
 
 @cli.command(help="Upload random photoes to BeReal Servers")
@@ -233,6 +231,8 @@ def get_user_profile(user_id):
         raise Exception("No token found, are you logged in?")
     r = bf.get_user_profile(user_id)
     print(r)
+    print(r.__dict__)
+
 
 @cli.command(help="Sends a notification to your friends, saying you're taking a bereal")
 @click.argument("user_id", type=click.STRING, required=False)
@@ -281,22 +281,17 @@ def upload_realmoji(type, filename):
 # currently broken, gives internal server error
 @cli.command(help="Add realmoji to post")
 @click.argument("post_id", type=click.STRING)
+@click.argument("user_id", type=click.STRING)
 @click.argument("type", type=click.Choice(["up", "happy", "surprised", "laughing", "heartEyes"]))
-@click.argument("filename", required=False, type=click.STRING)
-def emoji_realmoji(post_id, type, filename):
+def emoji_realmoji(post_id, user_id, type):
     type = str(type)
     bf = BeFake()
     try:
         bf.load()
     except Exception as ex:
         raise Exception("No token found, are you logged in?")
-    if not filename:
-        filename = f"{type}.jpg"
-    with open(f"data/photos/{filename}", "rb") as f:
-        data = f.read()
     # we don't have any method to know which realmojis (mapped to a type) the user already uploaded, we think, the client just stores the urls to uploaded realmojis and sends them...
-    r1 = bf.upload_realmoji(data, emoji_type=type)
-    r2 = bf.post_realmoji(post_id, emoji_type=type, name=r1)
+    r2 = bf.post_realmoji(post_id, user_id, emoji_type=type)
     print(r2)
 
 
