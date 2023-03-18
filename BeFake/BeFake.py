@@ -85,6 +85,18 @@ class BeFake:
             self.refresh_token = f.read()
             self.refresh_tokens()
 
+    def api_request(self, method: str, endpoint: str, **kwargs) -> dict:
+        assert not endpoint.startswith("/")
+        res = self.client.request(
+            method,
+            f"{self.api_url}/{endpoint}",
+            headers={"authorization": self.token},
+            **kwargs,
+        )
+        res.raise_for_status()
+        # TODO: Include error message in exception
+        return res.json()
+
     def send_otp(self, phone: str) -> None:
         self.phone = phone
         res = self.client.post(
@@ -132,12 +144,7 @@ class BeFake:
         self.user_id = res["user_id"]
 
     def get_user_info(self):
-        res = self.client.get(
-            f"{self.api_url}/person/me",
-            headers={
-                "authorization": self.token,
-            },
-        ).json()
+        res = self.api_request("get", "person/me")
         return User(res, self)
 
     def get_user_profile(self, user_id):
@@ -148,48 +155,23 @@ class BeFake:
         return User(res, self)
 
     def get_friends_feed(self):
-        res = self.client.get(
-            f"{self.api_url}/feeds/friends",
-            headers={
-                "authorization": self.token,
-            },
-        ).json()
+        res = self.api_request("get", "feeds/friends")
         return [Post(p, self) for p in res]
 
-    def get_fof_feed(self): # friends of friends, this fails because it needs a whole new implementation because for some reason BeReal isn't using the same JSON tree :(
-        res = self.client.get(
-            f"{self.api_url}/feeds/friends-of-friends",
-            headers={
-                "authorization": self.token,
-            },
-        ).json()
+    def get_fof_feed(self):  # friends of friends, this fails because it needs a whole new implementation because for some reason BeReal isn't using the same JSON tree :(
+        res = self.api_request("get", "feeds/friends-of-friends")
         return [Post(p, self) for p in res["data"]]
 
     def get_discovery_feed(self):
-        res = self.client.get(
-            f"{self.api_url}/feeds/discovery",
-            headers={
-                "authorization": self.token,
-            },
-        ).json()
+        res = self.api_request("get", "feeds/discovery")
         return [Post(p, self) for p in res["posts"]]
 
     def get_memories_feed(self):
-        res = self.client.get(
-            f"{self.api_url}/feeds/memories",
-            headers={
-                "authorization": self.token,
-            },
-        ).json()
+        res = self.api_request("get", "feeds/memories")
         return [Memory(mem, self) for mem in res["data"]]
 
     def delete_memory(self, memory_id: str):
-        res = self.client.delete(
-            f"{self.api_url}/memories/{memory_id}",
-            headers={
-                "authorization": self.token,
-            },
-        ).json()
+        res = self.api_request("delete", f"memories/{memory_id}")
         return res
 
     def delete_post(self):
@@ -203,61 +185,33 @@ class BeFake:
         return res
 
     def get_memories_video(self):
-        res = self.client.get(
-            f"{self.api_url}/memories/video",
-            headers={
-                "authorization": self.token,
-            },
-        ).json()
+        res = self.api_request("get", f"memories/video")
         return res
 
     def delete_video_memory(self, memory_id: str):
-        res = self.client.delete(
-            f"{self.api_url}/memories/video/{memory_id}",
-            headers={
-                "authorization": self.token,
-            },
-        ).json()
+        res = self.api_request("delete", f"memories/video/{memory_id}")
         return res
 
     def add_friend(self, user_id: str):
-        res = self.client.post(
-            f"{self.api_url}/relationships/friend-requests",
-            headers={
-                "authorization": self.token,
-            },
+        res = self.api_request("post",
+            "relationships/friend-requests",
             data={
                 "userId": user_id,
                 "source": "contact",
             },
-        ).json()
+        )
         return res
 
     def get_friends(self):
-        res = self.client.get(
-            f"{self.api_url}/relationships/friends",
-            headers={
-                "authorization": self.token,
-            },
-        ).json()
+        res = self.api_request("get", f"relationships/friends")
         return [User(friend, self) for friend in res["data"]]
 
     def get_friend_suggestions(self):
-        res = self.client.get(
-            f"{self.api_url}/relationships/suggestions",
-            headers={
-                "authorization": self.token,
-            },
-        ).json()
+        res = self.api_request("get", f"relationships/suggestions")
         return [User(suggestion, self) for suggestion in res["data"]]
 
     def get_friend_requests(self, req_type: str):
-        res = self.client.get(
-            f"{self.api_url}/relationships/friend-requests/{req_type}",
-            headers={
-                "authorization": self.token,
-            },
-        ).json()
+        res = self.api_request("get", f"relationships/friend-requests/{req_type}")
         return [User(user, self) for user in res["data"]]
 
     def get_sent_friend_requests(self):
@@ -271,15 +225,12 @@ class BeFake:
             hashlib.sha256(phone_number.encode("utf-8")).hexdigest()
             for phone_number in phone_numbers
         ]
-        res = self.client.post(
-            f"{self.api_url}/relationships/contacts",
-            headers={
-                "authorization": self.token,
-            },
+        res = self.api_request("post",
+            "/relationships/contacts",
             data={
                 "phoneNumbers": hashed_phone_numbers,
             },
-        ).json()
+        )
         return [User(user, self) for user in res]
 
     def get_user_by_phone_number(self, phone_number: str):
@@ -332,9 +283,8 @@ class BeFake:
         data = {
             "content": comment,
         }
-        res = self.client.post(f"{self.api_url}/content/comments", params=payload, data=data,
-                               headers={"authorization": self.token})
-        return res.json()
+        res = self.api_request("post", "content/comments", params=payload, data=data)
+        return res
 
     def upload_realmoji(self, image_file: bytes, emoji_type: str):
         picture = RealmojiPicture({})
@@ -359,13 +309,11 @@ class BeFake:
             "emoji": emojis[emoji_type]
         }
 
-        res = self.client.put(f"{self.api_url}/person/me/realmojis", data=data, headers={"authorization": self.token})
-        return res.json()
-
-
-
+        res = self.api_request("put", "person/me/realmojis", data=data, headers={"authorization": self.token})
+        return res
 
     # IT WORKS!!!!
+
     def post_realmoji(
             self,
             post_id: str,
@@ -415,8 +363,7 @@ class BeFake:
         payload = {
             "postId": post_id,
         }
-        res = self.client.get(f"{self.api_url}/content/realmojis",
+        res = self.api_request("get", f"content/realmojis",
                               params=payload,
-                              headers={"authorization": self.token}
                               )
         return res
