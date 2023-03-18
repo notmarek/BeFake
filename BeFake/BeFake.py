@@ -7,7 +7,6 @@ import pendulum
 import hashlib
 import platform
 import os
-from .models.picture import Picture
 from .models.realmoji_picture import RealmojiPicture
 
 from .models.post import Post
@@ -54,7 +53,7 @@ class BeFake:
             verify=not disable_ssl,
             headers={
                 # "user-agent": "AlexisBarreyat.BeReal/0.24.0 iPhone/16.0.2 hw/iPhone12_8 (GTMSUF/1)",
-                "user-agent": "BeReal/0.25.1 (iPhone; iOS 16.0.2; Scale/2.00)",
+                "user-agent": "BeReal/0.35.0 (iPhone; iOS 16.0.2; Scale/2.00)",
                 "x-ios-bundle-identifier": "AlexisBarreyat.BeReal",
             },
         )
@@ -142,18 +141,11 @@ class BeFake:
         return User(res, self)
 
     def get_user_profile(self, user_id):
-        payload = {
-            "data": {
-                "uid": user_id
-            }
-        }
         # here for example we have a firebase-instance-id-token header with the value from the next line, that we can just ignore (but maybe we need it later, there seem to be some changes to the API especially endpoints moving tho the cloudfunctions.net server)
         # cTn8odwxQo6DR0WFVnM9TJ:APA91bGV86nmQUkqnLfFv18IhpOak1x02sYMmKvpUAqhdfkT9Ofg29BXKXS2mbt9oE-LoHiiKViXw75xKFLeOxhb68wwvPCJF79z7V5GbCsIQi7XH1RSD8ItcznqM_qldSDjghf5N8Uo
-        res = self.client.post("https://us-central1-alexisbarreyat-bereal.cloudfunctions.net/getUserProfile",
-                               json=payload,
-                               headers={"authorization": f"Bearer {self.token}"}
-                               )
-        return res.json()
+        res = self.client.get(f"https://mobile.bereal.com/api/person/profiles/{user_id}",
+                               headers={"authorization": f"Bearer {self.token}"}).json()
+        return User(res, self)
 
     def get_friends_feed(self):
         res = self.client.get(
@@ -163,6 +155,15 @@ class BeFake:
             },
         ).json()
         return [Post(p, self) for p in res]
+
+    def get_fof_feed(self): # friends of friends, this fails because it needs a whole new implementation because for some reason BeReal isn't using the same JSON tree :(
+        res = self.client.get(
+            f"{self.api_url}/feeds/friends-of-friends",
+            headers={
+                "authorization": self.token,
+            },
+        ).json()
+        return [Post(p, self) for p in res["data"]]
 
     def get_discovery_feed(self):
         res = self.client.get(
@@ -310,8 +311,8 @@ class BeFake:
         ).json()
         return res
 
-    def upload(self, data: bytes):
-        file = Picture({})
+    def upload(self, data: bytes): # Broken?
+        file = EmojiUpload()
         file.upload(self, data)
         print(file.url)
         return file
@@ -337,15 +338,39 @@ class BeFake:
 
     def upload_realmoji(self, image_file: bytes, emoji_type: str):
         picture = RealmojiPicture({})
-        name = picture.upload(self, image_file, emoji_type)
-        return name
+        path = picture.upload(self, image_file, emoji_type)
+        emojis = {
+            "up": "👍",
+            "happy": "😃",
+            "surprised": "😲",
+            "laughing": "😍",
+            "heartEyes": "😂"
+        }
+        if emoji_type not in emojis:
+            raise ValueError("Not a valid emoji type")
 
-    # currently gives server errors
+        data = {
+                "media": {
+                "bucket": "storage.bere.al",
+                 "path": path,
+                "width": picture.width,
+                "height": picture.height
+            },
+            "emoji": emojis[emoji_type]
+        }
+
+        res = self.client.put(f"{self.api_url}/person/me/realmojis", data=data, headers={"authorization": self.token})
+        return res.json()
+
+
+
+
+    # IT WORKS!!!!
     def post_realmoji(
             self,
             post_id: str,
+            user_id: str,
             emoji_type: str,
-            name: str
     ):
         emojis = {
             "up": "👍",
@@ -356,18 +381,16 @@ class BeFake:
         }
         if emoji_type not in emojis:
             raise ValueError("Not a valid emoji type")
-        emoji = emojis.get(emoji_type, "👍")
-        json_data = {
-            "data": {
-                "action": "add",
-                "emoji": emoji,
-                "ownerId": self.user_id,
-                "photoId": post_id,
-                "type": emoji_type,
-                "uri": name
-            }
+
+        payload = {
+            "postId": post_id,
+            "postUserId": user_id
         }
-        res = self.client.post("https://us-central1-alexisbarreyat-bereal.cloudfunctions.net/sendRealMoji",
+
+        json_data = {
+            "emoji": emojis[emoji_type]
+        }
+        res = self.client.put(f"{self.api_url}/content/realmojis", params=payload,
                                json=json_data, headers={"authorization": f"Bearer {self.token}"})
         return res.content
 

@@ -1,4 +1,5 @@
 # from ..BeFake import BeFake
+from .post_picture import *
 from .user import User
 from .picture import Picture
 from .realmoji import RealMoji
@@ -33,7 +34,10 @@ class Post(object):
         self.late_in_seconds = data_dict.get("lateInSeconds", None)
         self.caption = data_dict.get("caption", None)
         self.public = data_dict.get("isPublic", None)
-        self.location = data_dict.get("location", None)  # TODO: location object?
+        self.location = Location(
+            data_dict.get("latitude", None),
+            data_dict.get("longitude", None),
+        )
         self.retakes = data_dict.get("retakeCounter", None)
         self.creation_date = data_dict.get("creationDate", None)
         if self.creation_date is not None:
@@ -58,7 +62,7 @@ class Post(object):
             primary: bytes,
             secondary: bytes,
             is_late: bool,
-            is_public: bool,
+            visibility: str,
             caption: str,
             location,
             retakes=0,
@@ -68,33 +72,40 @@ class Post(object):
             now = pendulum.now()
             taken_at = f"{now.to_date_string()}T{now.to_time_string()}Z"
 
-        primary_picture = Picture({})
-        primary_picture.upload(self, primary)
-        secondary_picture = Picture({})
-        secondary_picture.upload(self, secondary, True)
+        postUpload = PostUpload(primary, secondary)
+        postUpload.upload(self)
 
         json_data = {
-            "isPublic": is_public,
             "isLate": is_late,
             "retakeCounter": retakes,
             "takenAt": taken_at,
-            "location": location,
+            "location": {
+                "latitude": location.lat,
+                "longitude": location.lon
+            },
             "caption": caption,
+            "visibility": [
+                visibility
+            ],
             "backCamera": {
                 "bucket": "storage.bere.al",
-                "height": primary_picture.height,
-                "width": primary_picture.width,
-                "path": primary_picture.url.replace("https://storage.bere.al/", ""),
+                "height": postUpload.primarySize[1],
+                "width": postUpload.primarySize[0],
+                "path": postUpload.primaryPath,
             },
             "frontCamera": {
                 "bucket": "storage.bere.al",
-                "height": secondary_picture.height,
-                "width": secondary_picture.width,
-                "path": secondary_picture.url.replace("https://storage.bere.al/", ""),
+                "height": postUpload.secondarySize[1],
+                "width": postUpload.secondarySize[0],
+                "path": postUpload.secondaryPath,
             },
         }
-        res = self.client.post(f"{self.api_url}/content/post", json=json_data, headers={"authorization": self.token})
+        res = self.client.post(f"{self.api_url}/content/posts", json=json_data, headers={"authorization": self.token})
 
+        if res.status_code != 200:
+            raise Exception(f"Error making the post: {res.status_code}")
+
+        res = res.json()
         self.primary_photo = Picture(res["primary"])
         self.secondary_photo = Picture(res["secondary"])
         self.id = res.get("id", None)
@@ -106,7 +117,15 @@ class Post(object):
         self.taken_at = res.get("takenAt", None)
         if self.taken_at is not None:
             self.taken_at = pendulum.parse(self.taken_at)
-        self.location = res.get("location", None)
+        self.location = Location(json=res["location"])
         self.user = User(res.get("user", {}), self.bf)
 
         return res.content
+
+class Location:
+    def __init__(self, lat=None, lon=None, json=None):
+        self.lat = lat
+        self.lon = lon
+        if json != None:
+            self.lat = json["latitude"]
+            self.lon = json["longitude"]
