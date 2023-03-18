@@ -1,6 +1,7 @@
 import datetime
 import os.path
 from typing import Optional
+from pathlib import Path
 
 import httpx
 import pendulum
@@ -23,8 +24,8 @@ class Picture(object):
 
     def exists(self):
         return self.url is not None
-    
-    def download(self, path: Optional[str], ext=None):
+
+    def download(self, path: Optional[Path], ext=None):
         if ext:
             # with jpg/jpeg, the file extension is conventionally jpg, but the PIL format name is jpeg
             if ext in ['jpg', 'jpeg']:

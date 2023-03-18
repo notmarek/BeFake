@@ -1,10 +1,11 @@
 import json
 import os
+from pathlib import Path
 from .BeFake import BeFake
 from .models.post import Post, Location
 import click
 
-DATA_DIR = "data"
+DATA_DIR = Path("data")
 
 @click.group()
 @click.pass_context
@@ -49,9 +50,9 @@ def refresh():
 
 @cli.command(help="Download a feed")
 @click.argument("feed_id", type=click.Choice(["friends", "friends-of-friends", "discovery", "memories"]))
-@click.option("--save-location", help="The paths where the posts should be downloaded")
-@click.option("--realmoji-location", help="The paths where the (non-instant) realmojis should be downloaded")
-@click.option("--instant-realmoji-location", help="The paths where the instant realmojis should be downloaded")
+@click.option("--save-location", type=click.Path(file_okay=False), help="The paths where the posts should be downloaded")
+@click.option("--realmoji-location", type=click.Path(file_okay=False), help="The paths where the (non-instant) realmojis should be downloaded")
+@click.option("--instant-realmoji-location", type=click.Path(file_okay=False), help="The paths where the instant realmojis should be downloaded")
 def feed(feed_id, save_location, realmoji_location, instant_realmoji_location):
     date_format = 'YYYY-MM-DD_HH-mm-ss'
 
@@ -60,19 +61,19 @@ def feed(feed_id, save_location, realmoji_location, instant_realmoji_location):
         bf.load()
     except:
         raise Exception("No token found, are you logged in?")
-    if feed_id == "friends":
-        feed = bf.get_friends_feed()
-    elif feed_id == "friends-of-friends":
-        feed = bf.get_fof_feed()
-    elif feed_id == "discovery":
-        feed = bf.get_discovery_feed()
-    elif feed_id == "memories":
-        feed = bf.get_memories_feed()
+    FEED_GETTERS = {
+        "friends": bf.get_friends_feed,
+        "friends-of-friends": bf.get_fof_feed,
+        "discovery": bf.get_discovery_feed,
+        "memories": bf.get_memories_feed,
+    }
+    feed = FEED_GETTERS[feed_id]()
 
     # Add fallback location for save_location and realmoji_location parameters if they were not specified by the user.
     # These strings will get formatted later, that's why the "f" is missing before the strings.
     if save_location is None:
         if feed_id == "memories":
+            # TODO: Is there a better way to do this?
             save_location = f"{DATA_DIR}" + "/feeds/memories/{date}"
         else:
             save_location = f"{DATA_DIR}" + "/feeds/{feed_id}/{user}/{post_id}"
@@ -82,7 +83,9 @@ def feed(feed_id, save_location, realmoji_location, instant_realmoji_location):
             f"{DATA_DIR}" + \
             "/feeds/{feed_id}/{post_user}/{post_id}/reactions/{type}/{user}"
 
-    instant_realmoji_location = realmoji_location if instant_realmoji_location is None else instant_realmoji_location
+    # instant_realmoji_location = realmoji_location if instant_realmoji_location is None else instant_realmoji_location
+    if instant_realmoji_location is None:
+        instant_realmoji_location = realmoji_location
 
     for item in feed:
         if feed_id == "memories":
@@ -108,16 +111,16 @@ def feed(feed_id, save_location, realmoji_location, instant_realmoji_location):
             _realmoji_location = instant_realmoji_location if emoji.type == 'instant' else realmoji_location
 
             # Format realmoji location
-            _realmoji_location = _realmoji_location.format(user=emoji.username, type=emoji.type, feed_id=feed_id,
+            _realmoji_location = Path(_realmoji_location.format(user=emoji.username, type=emoji.type, feed_id=feed_id,
                                                             post_date=post_date, post_user=item.username,
-                                                            post_id=item.id, date='{date}')
+                                                            post_id=item.id, date='{date}'))
 
             # Getting the realmoji creation date sends an extra request
             # Only use that if it's actually needed
-            if '{date}' in _realmoji_location:
-                _realmoji_location = _realmoji_location.format(date=emoji.get_creation_date().format(date_format))
+            if '{date}' in str(_realmoji_location):
+                _realmoji_location = Path(_realmoji_location.format(date=emoji.get_creation_date().format(date_format)))
 
-            os.makedirs(os.path.dirname(_realmoji_location), exist_ok=True)
+            _realmoji_location.parent.mkdir(parents=True, exist_ok=True)
             emoji.photo.download(f"{_realmoji_location}")
 
 
