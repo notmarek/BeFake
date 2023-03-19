@@ -39,7 +39,9 @@ class User(object):
         self.country_code = data_dict.get("countryCode", None)
         self.region = data_dict.get("region", None)
         self.created_at = data_dict.get("createdAt", None)
-        self.profile_picture = Picture(data_dict.get("profilePicture", {}))
+        self.profile_picture = data_dict.get("profilePicture", None)
+        if self.profile_picture is not None:
+            self.profile_picture = Picture(data_dict.get("profilePicture", {}))
         self.friend_ship_status = data_dict.get("status", None)
         if self.created_at is not None:
             self.created_at = pendulum.parse(self.created_at)
