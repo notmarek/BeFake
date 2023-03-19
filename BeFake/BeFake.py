@@ -394,3 +394,8 @@ class BeFake:
                               params=payload,
                               )
         return res
+
+    def search_username(self, username):
+        res = self.api_request("get", f"search/profile", params={"query": username})
+        return [User(user, self) for user in res["data"]]
+

@@ -262,6 +262,12 @@ def emoji_realmoji(bf, post_id, user_id, type):
     r2 = bf.post_realmoji(post_id, user_id, emoji_type=type)
     print(r2)
 
+@cli.command(help="Search for a given username.")
+@click.argument("username", type=click.STRING)
+@load_bf
+def search_user(bf, username):
+    r = bf.search_username(username)
+    print(r)
 
 if __name__ == "__main__":
     cli(obj={})
