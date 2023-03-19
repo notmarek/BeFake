@@ -101,8 +101,7 @@ class Post(object):
             },
         }
         res = self.client.post(f"{self.api_url}/content/posts", json=json_data, headers={"authorization": self.token})
-
-        if res.status_code != 200:
+        if res.status_code not in (200,201):
             raise Exception(f"Error making the post: {res.status_code}")
 
         res = res.json()
