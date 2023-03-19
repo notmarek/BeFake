@@ -42,7 +42,7 @@ def get_default_session_filename() -> str:
 class BeFake:
     def __init__(
             self,
-            refresh_token=None,
+            refresh_token: Optional[str] = None,
             proxies=None,
             disable_ssl=False,
             api_url="https://mobile.bereal.com/api",
@@ -82,7 +82,7 @@ class BeFake:
         if file_path is None:
             file_path = get_default_session_filename()
         with open(file_path, "r") as f:
-            self.refresh_token = f.read()
+            self.refresh_token = str(f.read()).strip()
             self.refresh_tokens()
 
     def send_otp(self, phone: str) -> None:
