@@ -281,13 +281,7 @@ class BeFake:
         return res
 
     def change_caption(self, caption: str):
-        res = self.client.post(
-            "https://us-central1-alexisbarreyat-bereal.cloudfunctions.net/setCaptionPost",
-            headers={
-                "authorization": f"Bearer {self.token}",
-            },
-            json={"data": {"caption": caption}}
-        ).json()
+        res = self.api_request("patch", f"content/posts/caption", data={"caption": caption})
         return res
 
     def upload(self, data: bytes):  # Broken?
