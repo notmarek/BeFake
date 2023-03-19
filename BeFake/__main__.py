@@ -269,5 +269,28 @@ def search_user(bf, username):
     r = bf.search_username(username)
     print(r)
 
+# TODO: there's probably a better way of doing this, for instance having friend-request <add|view|cancel>.
+@cli.command(help="Get friend requests")
+@click.argument("operation", type=click.Choice(["sent", "received"]))
+@load_bf
+def friend_requests(bf, operation):
+    r = bf.get_friend_requests(operation)
+    print(r)
+
+@cli.command(help="Send friend request")
+@click.argument("user_id", type=click.STRING)
+@click.option("-s", "--source", "source", type=click.Choice(["search", "contacts", "suggestion"]), default="search", show_default=True, help="Where you first found about the user")
+@load_bf
+def new_friend_request(bf, user_id, source):
+    r = bf.add_friend(user_id, source)
+    print(r)
+
+@cli.command(help="Cancel friend request")
+@click.argument("user_id", type=click.STRING)
+@load_bf
+def cancel_friend_request(bf, user_id):
+    r = bf.remove_friend_request(user_id)
+    print(r)
+
 if __name__ == "__main__":
     cli(obj={})

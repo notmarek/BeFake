@@ -248,6 +248,18 @@ class BeFake:
     def get_received_friend_requests(self):
         return self.get_friend_requests("received")
 
+    def send_friend_request(self, userId, source):
+        json_data = {
+            "userId": userId,
+            "source": source
+        }
+        res = self.api_request("post", f"relationships/friend-requests", data=json_data)
+        return User(res)
+
+    def remove_friend_request(self, userId):
+        res = self.api_request("patch", f"relationships/friend-requests/{userId}", data={"status": "cancelled"})
+        return User(res)
+
     def get_users_by_phone_number(self, phone_numbers):
         hashed_phone_numbers = [
             hashlib.sha256(phone_number.encode("utf-8")).hexdigest()
