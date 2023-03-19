@@ -110,7 +110,7 @@ class BeFake:
                 "user-agent": "BeReal/8586 CFNetwork/1240.0.4 Darwin/20.6.0",
             },
             data=data)
-        if vonageRes.status_code == 200:
+        if vonageRes.status_code == 200 and vonageRes.json()["status"] == 0:
             self.vonageRequestId = vonageRes.json()["vonageRequestId"]
         else:
             res = self.client.post(
