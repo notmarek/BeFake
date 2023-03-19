@@ -45,6 +45,7 @@ class BeFake:
             refresh_token: Optional[str] = None,
             proxies=None,
             disable_ssl=False,
+            deviceId=None,
             api_url="https://mobile.bereal.com/api",
             google_api_key="AIzaSyDwjfEeparokD7sXPVQli9NsTuhT6fJ6iA",
     ) -> None:
@@ -59,7 +60,7 @@ class BeFake:
         )
         self.gapi_key = google_api_key
         self.api_url = api_url
-
+        self.deviceId = deviceId
         if refresh_token is not None:
             self.refresh_token = refresh_token
             self.refresh_tokens()
@@ -99,35 +100,61 @@ class BeFake:
 
     def send_otp(self, phone: str) -> None:
         self.phone = phone
-        res = self.client.post(
-            "https://www.googleapis.com/identitytoolkit/v3/relyingparty/sendVerificationCode",
-            params={"key": self.gapi_key},
-            data={
-                "phoneNumber": phone,
-                "iosReceipt": "AEFDNu9QZBdycrEZ8bM_2-Ei5kn6XNrxHplCLx2HYOoJAWx-uSYzMldf66-gI1vOzqxfuT4uJeMXdreGJP5V1pNen_IKJVED3EdKl0ldUyYJflW5rDVjaQiXpN0Zu2BNc1c",
+        data = {
+            "phoneNumber": phone,
+            "deviceId": self.deviceId
+        }
+        vonageRes = self.client.post(
+            "https://auth.bereal.team/api/vonage/request-code",
+            headers={
+                "user-agent": "BeReal/8586 CFNetwork/1240.0.4 Darwin/20.6.0",
             },
-        ).json()
-        self.otp_session = res["sessionInfo"]
+            data=data)
+        if vonageRes.status_code == 200:
+            self.vonageRequestId = vonageRes.json()["vonageRequestId"]
+        else:
+            res = self.client.post(
+                "https://www.googleapis.com/identitytoolkit/v3/relyingparty/sendVerificationCode",
+                params={"key": self.gapi_key},
+                data={
+                    "phoneNumber": phone,
+                    "iosReceipt": "AEFDNu9QZBdycrEZ8bM_2-Ei5kn6XNrxHplCLx2HYOoJAWx-uSYzMldf66-gI1vOzqxfuT4uJeMXdreGJP5V1pNen_IKJVED3EdKl0ldUyYJflW5rDVjaQiXpN0Zu2BNc1c",
+                },
+            ).json()
+            self.otp_session = res["sessionInfo"]
 
     def verify_otp(self, otp: str) -> None:
-        if self.otp_session is None:
-            raise Exception("No open otp session.")
-        res = self.client.post(
-            "https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyPhoneNumber",
-            params={"key": self.gapi_key},
-            data={
-                "sessionInfo": self.otp_session,
+        if self.vonageRequestId is not None:
+            vonageRes = self.client.post("https://auth.bereal.team/api/vonage/check-code", data={
                 "code": otp,
-                "operation": "SIGN_UP_OR_IN",
-            },
-        ).json()
+                "vonageRequestId": self.vonageRequestId
+            }).json()
+            res = self.client.post("https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyCustomToken",
+                                   params={"key": self.gapi_key}, data={
+                    "token": vonageRes["token"],
+                    "returnSecureToken": True
+                }).json()
+        elif self.otp_session is not None:
+            res = self.client.post(
+                "https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyPhoneNumber",
+                params={"key": self.gapi_key},
+                data={
+                    "sessionInfo": self.otp_session,
+                    "code": otp,
+                    "operation": "SIGN_UP_OR_IN",
+                },
+            ).json()
+
+        else:
+            raise Exception("No open otp/vonage session.")
 
         self.token = res["idToken"]
         self.token_info = json.loads(b64decode(res["idToken"].split(".")[1] + '=='))
         self.refresh_token = res["refreshToken"]
         self.expiration = pendulum.now().add(seconds=int(res["expiresIn"]))
-        self.user_id = res["localId"]
-        self.phone = res["phoneNumber"]
+        if self.vonageRequestId is None:
+            self.user_id = res["localId"]
+            self.phone = res["phoneNumber"]
 
     def refresh_tokens(self) -> None:
         if self.refresh_token is None:
@@ -157,6 +184,7 @@ class BeFake:
     def get_friends_feed(self):
         res = self.api_request("get", "feeds/friends")
         return [Post(p, self) for p in res]
+
 
     def get_fof_feed(self):  # friends of friends, this fails because it needs a whole new implementation because for some reason BeReal isn't using the same JSON tree :(
         res = self.api_request("get", "feeds/friends-of-friends")
@@ -262,8 +290,8 @@ class BeFake:
         ).json()
         return res
 
-    def upload(self, data: bytes): # Broken?
-        file = EmojiUpload()
+    def upload(self, data: bytes):  # Broken?
+        file = RealmojiPicture({})
         file.upload(self, data)
         print(file.url)
         return file
@@ -300,9 +328,9 @@ class BeFake:
             raise ValueError("Not a valid emoji type")
 
         data = {
-                "media": {
+            "media": {
                 "bucket": "storage.bere.al",
-                 "path": path,
+                "path": path,
                 "width": picture.width,
                 "height": picture.height
             },
@@ -311,7 +339,6 @@ class BeFake:
 
         res = self.api_request("put", "person/me/realmojis", data=data, headers={"authorization": self.token})
         return res
-
     # IT WORKS!!!!
 
     def post_realmoji(
@@ -339,7 +366,7 @@ class BeFake:
             "emoji": emojis[emoji_type]
         }
         res = self.client.put(f"{self.api_url}/content/realmojis", params=payload,
-                               json=json_data, headers={"authorization": f"Bearer {self.token}"})
+                              json=json_data, headers={"authorization": f"Bearer {self.token}"})
         return res.content
 
     def post_instant_realmoji(self, post_id: str, image_file: bytes):
