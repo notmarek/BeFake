@@ -143,7 +143,7 @@ class BeFake:
     def get_user_profile(self, user_id):
         # here for example we have a firebase-instance-id-token header with the value from the next line, that we can just ignore (but maybe we need it later, there seem to be some changes to the API especially endpoints moving tho the cloudfunctions.net server)
         # cTn8odwxQo6DR0WFVnM9TJ:APA91bGV86nmQUkqnLfFv18IhpOak1x02sYMmKvpUAqhdfkT9Ofg29BXKXS2mbt9oE-LoHiiKViXw75xKFLeOxhb68wwvPCJF79z7V5GbCsIQi7XH1RSD8ItcznqM_qldSDjghf5N8Uo
-        res = self.client.get(f"https://mobile.bereal.com/api/person/profiles/{user_id}",
+        res = self.client.get(f"{self.api_url}/person/profiles/{user_id}",
                                headers={"authorization": f"Bearer {self.token}"}).json()
         return User(res, self)
 
