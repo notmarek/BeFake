@@ -220,15 +220,15 @@ class BeFake:
         res = self.api_request("delete", f"memories/video/{memory_id}")
         return res
 
-    def add_friend(self, user_id: str):
+    def add_friend(self, user_id: str, source: str):
         res = self.api_request("post",
             "relationships/friend-requests",
             data={
                 "userId": user_id,
-                "source": "contact",
+                "source": source,
             },
         )
-        return res
+        return User(res, self)
 
     def get_friends(self):
         res = self.api_request("get", f"relationships/friends")
@@ -248,17 +248,9 @@ class BeFake:
     def get_received_friend_requests(self):
         return self.get_friend_requests("received")
 
-    def send_friend_request(self, userId, source):
-        json_data = {
-            "userId": userId,
-            "source": source
-        }
-        res = self.api_request("post", f"relationships/friend-requests", data=json_data)
-        return User(res)
-
     def remove_friend_request(self, userId):
         res = self.api_request("patch", f"relationships/friend-requests/{userId}", data={"status": "cancelled"})
-        return User(res)
+        return User(res, self)
 
     def get_users_by_phone_number(self, phone_numbers):
         hashed_phone_numbers = [
