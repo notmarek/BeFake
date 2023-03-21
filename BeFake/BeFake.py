@@ -110,7 +110,10 @@ class BeFake:
                 "user-agent": "BeReal/8586 CFNetwork/1240.0.4 Darwin/20.6.0",
             },
             data=data)
-        if vonageRes.status_code == 200 and vonageRes.json()["status"] == 0:
+        if vonageRes.json()["status"] != 0:
+            print("WARNING: " + vonageRes.json()["errorText"])
+            print("If you already received a code before, ignore the warning and enter it.")
+        if vonageRes.status_code == 200:
             self.vonageRequestId = vonageRes.json()["vonageRequestId"]
         else:
             res = self.client.post(
