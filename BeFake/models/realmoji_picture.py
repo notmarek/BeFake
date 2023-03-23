@@ -1,4 +1,7 @@
+import io
+
 import httpx
+from PIL import Image
 
 
 class RealmojiPicture(object):
@@ -19,7 +22,17 @@ class RealmojiPicture(object):
         return r.content
 
     # TODO: Figure out why non-instant realmojis can't be added after being uploaded ({"error":{"message":"Something went Wrong","status":"INTERNAL"}})
-    def upload(self, befake):
+    def upload(self, befake, imageData):
+        image = Image.open(io.BytesIO(imageData))
+        mime_type = Image.MIME[image.format]
+
+        if mime_type != "image/webp":
+            if not image.mode == "RGB":
+                image = image.convert("RGB")
+
+        image_converted = io.BytesIO()
+        image.save(image_converted, format="WEBP")
+        image_converted = image_converted.getvalue()
         initHeaders = {
             "authorization": f"Bearer {befake.token}"
         }
@@ -37,7 +50,7 @@ class RealmojiPicture(object):
         url = init_data["data"]["url"]
 
         # Upload request
-        upload_res = befake.client.put(url, headers=headers, data=self.imageData)
+        upload_res = befake.client.put(url, headers=headers, data=image_converted)
         if upload_res.status_code != 200:
             raise Exception(f"Error uploading primary image: {upload_res.status_code}")
 

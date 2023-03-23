@@ -228,14 +228,15 @@ def send_push_notification(bf, user_id, username):
 
 @cli.command(help="post an instant realmoji")
 @click.argument("post_id", type=click.STRING)
+@click.argument("user_id", type=click.STRING)
 @click.argument("filename", required=False, type=click.STRING)
 @load_bf
-def instant_realmoji(bf, post_id, filename):
+def instant_realmoji(bf, post_id, user_id, filename):
     if not filename:
         filename = "primary.jpg"
     with open(f"data/photos/{filename}", "rb") as f:
         data = f.read()
-    r = bf.post_instant_realmoji(post_id, data)
+    r = bf.post_instant_realmoji(post_id, user_id, data)
     print(r)
 
 @cli.command(help="Upload an emoji-specific realmoji")

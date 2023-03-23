@@ -33,11 +33,7 @@ class PostUpload:
 
     def upload(self, befake):
         # Upload initialization:
-        initHeaders = {
-            "authorization": f"Bearer {befake.token}"
-        }
-        initRes = befake.client.get("https://mobile.bereal.com/api/content/posts/upload-url?mimeType=image/webp",
-                                    headers=initHeaders)
+        initRes = befake.api_request("get",f"content/posts/upload-url", params={"mimeType": "image/webp"})
         if initRes.status_code != 200:
             raise Exception(f"Error initiating upload: {initRes.status_code}")
 

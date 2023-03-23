@@ -317,7 +317,7 @@ class BeFake:
 
     def upload_realmoji(self, image_file: bytes, emoji_type: str):
         picture = RealmojiPicture({})
-        path = picture.upload(self, image_file, emoji_type)
+        path = picture.upload(self, image_file)
         emojis = {
             "up": "👍",
             "happy": "😃",
@@ -366,8 +366,8 @@ class BeFake:
         json_data = {
             "emoji": emojis[emoji_type]
         }
-        res = self.client.put(f"{self.api_url}/content/realmojis", params=payload,
-                              json=json_data, headers={"authorization": f"Bearer {self.token}"})
+        res = self.api_request("put", f"/content/realmojis", params=payload,
+                              json=json_data)
         return res.content
 
     def post_instant_realmoji(self, post_id: str, image_file: bytes):
