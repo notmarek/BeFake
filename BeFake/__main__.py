@@ -159,17 +159,20 @@ def parse_friends(bf, save_location):
 
 @cli.command(help="Post the photos under /data/photos to your feed")
 @click.option('visibility', '--visibility', "-v", type=click.Choice(['friends', 'friends-of-friends', 'public']), default='friends', show_default=True, help="Set post visibility")
+@click.option('caption', '--caption', "-c", type=click.STRING, default='', show_default=False, help="Post caption")
+@click.option('location', '--location', "-l", type=float, nargs=2, help="Post location, in latitude, longitude format.")
+@click.option('retakes', '--retakes', "-r", type=int, default=0, show_default=True, help="Retake counter")
 @click.argument('primary_path', required=False, type=click.STRING)
 @click.argument('secondary_path', required=False, type=click.STRING)
 @load_bf
-def post(bf, visibility, primary_path, secondary_path):
+def post(bf, visibility, caption, location, retakes, primary_path, secondary_path):
     primary_path = "data/photos/primary.jpg" if not primary_path else primary_path
     secondary_path = "data/photos/secondary.jpg" if not secondary_path else secondary_path
     with open("data/photos/primary.jpg", "rb") as f:
         primary_bytes = f.read()
     with open("data/photos/secondary.jpg", "rb") as f:
         secondary_bytes = f.read()
-    r = Post.create_post(bf, primary=primary_bytes, secondary=secondary_bytes, is_late=False, visibility=visibility, caption="Insert your caption here", location=Location(0,0), retakes=0)
+    r = Post.create_post(bf, primary=primary_bytes, secondary=secondary_bytes, is_late=False, visibility=visibility, caption=caption, location=Location(location[0], location[1]), retakes=retakes)
     print(r)
 
 @cli.command(help="Upload random photoes to BeReal Servers")

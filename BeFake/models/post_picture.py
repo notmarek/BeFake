@@ -34,17 +34,14 @@ class PostUpload:
     def upload(self, befake):
         # Upload initialization:
         initRes = befake.api_request("get",f"content/posts/upload-url", params={"mimeType": "image/webp"})
-        if initRes.status_code != 200:
-            raise Exception(f"Error initiating upload: {initRes.status_code}")
 
-        init_data = initRes.json()
-        headers1 = init_data["data"][0]["headers"]
+        headers1 = initRes["data"][0]["headers"]
         headers1["Authorization"] = f"Bearer {befake.token}"
-        headers2 = init_data["data"][1]["headers"]
+        headers2 = initRes["data"][1]["headers"]
         headers2["Authorization"] = f"Bearer {befake.token}"
 
-        url1 = init_data["data"][0]["url"]
-        url2 = init_data["data"][1]["url"]
+        url1 = initRes["data"][0]["url"]
+        url2 = initRes["data"][1]["url"]
 
         primary_res = befake.client.put(url1, headers=headers1, data=self.primaryData)
 
@@ -57,8 +54,8 @@ class PostUpload:
 
 
         # populate self
-        self.primaryPath = init_data["data"][0]["path"]
-        self.secondaryPath = init_data["data"][1]["path"]
+        self.primaryPath = initRes["data"][0]["path"]
+        self.secondaryPath = initRes["data"][1]["path"]
 
         self.primarySize = (1500, 2000) # (width, height)
         self.secondarySize = (1500, 2000) # (width, height)

@@ -35,8 +35,8 @@ class Post(object):
         self.caption = data_dict.get("caption", None)
         self.public = data_dict.get("isPublic", None)
         self.location = Location(
-            data_dict.get("latitude", None),
-            data_dict.get("longitude", None),
+            lat=data_dict.get("latitude", None),
+            lon=data_dict.get("longitude", None),
         )
         self.retakes = data_dict.get("retakeCounter", None)
         self.creation_date = data_dict.get("creationDate", None)
@@ -74,7 +74,6 @@ class Post(object):
 
         postUpload = PostUpload(primary, secondary)
         postUpload.upload(self)
-
         json_data = {
             "isLate": is_late,
             "retakeCounter": retakes,
@@ -100,6 +99,7 @@ class Post(object):
                 "path": postUpload.secondaryPath,
             },
         }
+
         res = self.client.post(f"{self.api_url}/content/posts", json=json_data, headers={"authorization": self.token})
         if res.status_code not in (200,201):
             raise Exception(f"Error making the post: {res.status_code}")
@@ -117,9 +117,9 @@ class Post(object):
         if self.taken_at is not None:
             self.taken_at = pendulum.parse(self.taken_at)
         self.location = Location(json=res["location"])
-        self.user = User(res.get("user", {}), self.bf)
+        self.user = User(res.get("user", {}), self)
 
-        return res.content
+        return res
 
 class Location:
     def __init__(self, lat=None, lon=None, json=None):
