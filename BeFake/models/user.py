@@ -24,12 +24,7 @@ class User(object):
         from .realmoji import RealMoji
         self.realmojis = [RealMoji(rm, befake) for rm in data_dict.get("realmojis", [])]
         self.terms = data_dict.get("terms", None)
-        self.devices = [Device(data_dict.get("clientVersion", None),
-            data_dict.get("device", None),
-            data_dict.get("deviceId", None),
-            data_dict.get("platform", None),
-            data_dict.get("language", None),
-            data_dict.get("timezone", None)) for device in data_dict.get("devices", [])]
+        self.devices = [Device(data_dict=device) for device in data_dict.get("devices", [])]
         self.stats = data_dict.get("stats", None)  # TODO: implement stats object
         self.can_delete_post = data_dict.get("canDeletePost", None)
         self.can_update_region = data_dict.get("canUpdateRegion", None)
