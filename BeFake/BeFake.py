@@ -9,7 +9,7 @@ import platform
 import os
 from .models.realmoji_picture import RealmojiPicture
 
-from .models.post import Post
+from .models.post import Post, FOFPost
 from .models.memory import Memory
 from .models.user import User
 
@@ -189,9 +189,9 @@ class BeFake:
         return [Post(p, self) for p in res]
 
 
-    def get_fof_feed(self):  # friends of friends, this fails because it needs a whole new implementation because for some reason BeReal isn't using the same JSON tree :(
+    def get_fof_feed(self):  # friends of friends feed
         res = self.api_request("get", "feeds/friends-of-friends")
-        return [Post(p, self) for p in res["data"]]
+        return [FOFPost(p, self) for p in res["data"]]
 
     def get_discovery_feed(self):
         res = self.api_request("get", "feeds/discovery")

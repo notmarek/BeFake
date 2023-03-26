@@ -121,6 +121,43 @@ class Post(object):
 
         return res
 
+class FOFPost(object): # This dosen't inherit on Post because it dosent make use of Post.__init__
+    def __init__(self, data_dict, befake):
+        self.bf = befake
+        self.id = data_dict.get("id", None)
+        self.notification_id = data_dict.get("moment", {}).get("id", None)
+        self.user = User(data_dict.get("user", {}), befake)
+        self.owner_id = self.user.id
+        self.username = self.user.username
+        self.media_type = data_dict.get("mediaType", None)
+        self.region = data_dict.get("moment", {}).get("region", None)
+        self.bucket = data_dict.get("bucket", None)
+        self.primary_photo = Picture(data_dict.get("primary", {}))
+        self.secondary_photo = Picture(data_dict.get("secondary", {}))
+        self.late_in_seconds = data_dict.get("lateInSeconds", None)
+        self.caption = data_dict.get("caption", None)
+        self.public = data_dict.get("isPublic", None)
+        self.location = Location(data_dict.get("location", {}))
+        self.retakes = data_dict.get("retakeCounter", None)
+        self.creation_date = data_dict.get("postedAt", None)
+        if self.creation_date is not None:
+            self.creation_date = pendulum.parse(self.creation_date)
+        self.updated_at = data_dict.get("updatedAt", None)
+        if self.updated_at is not None:
+            self.updated_at = pendulum.from_timestamp(self.updated_at / 1000)
+        self.taken_at = data_dict.get("takenAt", None)
+        if self.taken_at is not None:
+            self.taken_at = pendulum.parse(self.taken_at)
+        self.comment = [Comment(comment, befake) for comment in data_dict.get("comment", [])]
+        self.realmojis = [RealMoji(rm, befake) for rm in data_dict.get("realMojis", [])]
+        self.screenshots = data_dict.get("screenshots", None)  # list containing ids of users that screenshotted
+        self.screenshots_v2 = [ScreenshotV2(s, befake) for s in data_dict.get("screenshotsV2", [])]
+        self.data_dict = data_dict
+
+    def __repr__(self) -> str:
+        return f"<Post {self.id}>"
+
+
 class Location:
     def __init__(self, lat=None, lon=None, json=None):
         self.lat = lat
