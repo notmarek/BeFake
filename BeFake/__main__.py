@@ -11,9 +11,6 @@ from .models.post import Post, Location
 
 import click
 
-from .BeFake import BeFake
-from .models.post import Location, Post
-
 DATA_DIR = "data"
 
 def load_bf(func):
