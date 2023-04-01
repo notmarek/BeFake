@@ -368,7 +368,7 @@ class BeFake:
         }
         res = self.api_request("put", f"/content/realmojis", params=payload,
                               json=json_data)
-        return res.content
+        return res
 
     def post_instant_realmoji(self, post_id: str, image_file: bytes):
         name = self.upload_realmoji(image_file, "instant")
@@ -400,3 +400,6 @@ class BeFake:
         res = self.api_request("get", f"search/profile", params={"query": username})
         return [User(user, self) for user in res["data"]]
 
+    def get_settings(self):
+        res = self.api_request("get", f"settings")
+        return res

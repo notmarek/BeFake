@@ -296,5 +296,11 @@ def cancel_friend_request(bf, user_id):
     r = bf.remove_friend_request(user_id)
     print(r)
 
+@cli.command(help="get settings")
+@load_bf
+def settings(bf):
+    r = bf.get_settings()
+    print(r)
+
 if __name__ == "__main__":
     cli(obj={})
