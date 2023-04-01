@@ -6,6 +6,7 @@ class PostUpload:
     """
     BeReal post upload endpoint
     """
+
     def __init__(self, primary: bytes, secondary: bytes):
         self.primary = Image.open(io.BytesIO(primary))
         self.secondary = Image.open(io.BytesIO(secondary))
@@ -30,10 +31,9 @@ class PostUpload:
         self.primaryPath = None
         self.secondaryPath = None
 
-
     def upload(self, befake):
         # Upload initialization:
-        initRes = befake.api_request("get",f"content/posts/upload-url", params={"mimeType": "image/webp"})
+        initRes = befake.api_request("get", f"content/posts/upload-url", params={"mimeType": "image/webp"})
 
         headers1 = initRes["data"][0]["headers"]
         headers1["Authorization"] = f"Bearer {befake.token}"
@@ -52,10 +52,9 @@ class PostUpload:
         if secondary_res.status_code != 200:
             raise Exception(f"Error uploading secondary image: {secondary_res.status_code}")
 
-
         # populate self
         self.primaryPath = initRes["data"][0]["path"]
         self.secondaryPath = initRes["data"][1]["path"]
 
-        self.primarySize = (1500, 2000) # (width, height)
-        self.secondarySize = (1500, 2000) # (width, height)
+        self.primarySize = (1500, 2000)  # (width, height)
+        self.secondarySize = (1500, 2000)  # (width, height)

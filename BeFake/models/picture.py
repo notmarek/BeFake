@@ -23,7 +23,7 @@ class Picture(object):
 
     def exists(self):
         return self.url is not None
-    
+
     def download(self, path: Optional[str], ext=None):
         if ext:
             # with jpg/jpeg, the file extension is conventionally jpg, but the PIL format name is jpeg
@@ -56,6 +56,7 @@ class Picture(object):
                     f.write(self.data)
 
         return r.content
+
     def get_date(self):
         if self.date:
             return self.date

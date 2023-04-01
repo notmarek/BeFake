@@ -15,7 +15,7 @@ class RealmojiPicture(object):
 
     def exists(self):
         return self.url is not None
-    
+
     def download(self):
         r = httpx.get(self.url)
         self.data = r.content

@@ -1,5 +1,4 @@
-# from ..BeFake import BeFake
-from .post_picture import *
+from .post_picture import PostUpload
 from .user import User
 from .picture import Picture
 from .realmoji import RealMoji
@@ -101,7 +100,7 @@ class Post(object):
         }
 
         res = self.client.post(f"{self.api_url}/content/posts", json=json_data, headers={"authorization": self.token})
-        if res.status_code not in (200,201):
+        if res.status_code not in (200, 201):
             raise Exception(f"Error making the post: {res.status_code}")
 
         res = res.json()
@@ -121,7 +120,8 @@ class Post(object):
 
         return res
 
-class FOFPost(object): # This dosen't inherit on Post because it dosent make use of Post.__init__
+
+class FOFPost(object):  # This dosen't inherit on Post because it dosent make use of Post.__init__
     def __init__(self, data_dict, befake):
         self.bf = befake
         self.id = data_dict.get("id", None)
@@ -162,6 +162,6 @@ class Location:
     def __init__(self, lat=None, lon=None, json=None):
         self.lat = lat
         self.lon = lon
-        if json != None:
+        if json is not None:
             self.lat = json["latitude"]
             self.lon = json["longitude"]

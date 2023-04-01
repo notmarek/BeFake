@@ -1,6 +1,7 @@
 from .user import User
 import pendulum
 
+
 class ScreenshotV2(object):
     def __init__(self, data_dict, befake) -> None:
         self.bf = befake

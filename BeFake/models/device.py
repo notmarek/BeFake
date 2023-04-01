@@ -2,8 +2,8 @@ from zoneinfo import ZoneInfo
 
 
 class Device:
-    def __init__(self, data_dict: dict, clientVersion=None, device=None, deviceId=None, platform=None, language=None,
-                 timezone=None):
+    def __init__(self, data_dict: dict, clientVersion=None, device=None,
+                 deviceId=None, platform=None, language=None, timezone=None):
         self.clientVersion = data_dict["clientVersion"]
         self.device = data_dict["device"]
         self.deviceId = data_dict["deviceId"]
