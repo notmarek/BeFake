@@ -175,6 +175,24 @@ def post(bf, visibility, caption, location, retakes, primary_path, secondary_pat
     r = Post.create_post(bf, primary=primary_bytes, secondary=secondary_bytes, is_late=False, visibility=visibility, caption=caption, location=loc, retakes=retakes, resize=resize)
     print(r)
 
+@cli.command(help="View an invidual post")
+@click.argument("feed_id", type=click.Choice(["friends", "friends-of-friends", "discovery"]))
+@click.argument("post_id", type=click.STRING)
+@load_bf
+def get_post(bf, feed_id, post_id):
+    if feed_id == "friends":
+        feed = bf.get_friends_feed()
+    elif feed_id == "friends-of-friends":
+        feed = bf.get_fof_feed()
+    elif feed_id == "discovery":
+        feed = bf.get_discovery_feed()
+
+    for post in feed:
+        if post.id == post_id:
+            print(post.__dict__)
+
+
+
 @cli.command(help="Upload random photoes to BeReal Servers")
 @click.argument("filename", type=click.STRING)
 @load_bf
