@@ -159,6 +159,7 @@ def parse_friends(bf, save_location):
 @click.option('caption', '--caption', "-c", type=click.STRING, default='', show_default=False, help="Post caption")
 @click.option('location', '--location', "-l", type=float, nargs=2, help="Post location, in latitude, longitude format.")
 @click.option('retakes', '--retakes', "-r", type=int, default=0, show_default=True, help="Retake counter")
+@click.option('resize', '--no-resize', "-R", default=True, show_default=True, help="Do not resize image to upload spec (1500, 2000), upload as is."
 @click.argument('primary_path', required=False, type=click.STRING)
 @click.argument('secondary_path', required=False, type=click.STRING)
 @load_bf
@@ -169,7 +170,7 @@ def post(bf, visibility, caption, location, retakes, primary_path, secondary_pat
         primary_bytes = f.read()
     with open("data/photos/secondary.jpg", "rb") as f:
         secondary_bytes = f.read()
-    r = Post.create_post(bf, primary=primary_bytes, secondary=secondary_bytes, is_late=False, visibility=visibility, caption=caption, location=Location(location[0], location[1]), retakes=retakes)
+    r = Post.create_post(bf, primary=primary_bytes, secondary=secondary_bytes, is_late=False, visibility=visibility, caption=caption, location=loc, retakes=retakes, resize=resize)
     print(r)
 
 @cli.command(help="Upload random photoes to BeReal Servers")

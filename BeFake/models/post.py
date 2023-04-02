@@ -65,13 +65,14 @@ class Post(object):
             caption: str,
             location,
             retakes=0,
-            taken_at=None,
+            resize=True,
+            taken_at=None
     ):
         if taken_at is None:
             now = pendulum.now()
             taken_at = f"{now.to_date_string()}T{now.to_time_string()}Z"
 
-        postUpload = PostUpload(primary, secondary)
+        postUpload = PostUpload(primary, secondary, resize)
         postUpload.upload(self)
         json_data = {
             "isLate": is_late,
