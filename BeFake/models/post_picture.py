@@ -20,11 +20,11 @@ class PostUpload:
         if mime_type2 != "image/webp":
             if not self.secondary.mode == "RGB":
                 self.secondary = self.secondary.convert("RGB")
-        
+
         # image resizing (1500, 2000)
         if resize:
-             self.primary = self.primary.resize(newsize)
-             self.secondary = self.secondary.resize(newsize)
+            self.primary = self.primary.resize(newsize)
+            self.secondary = self.secondary.resize(newsize)
 
         self.primaryData = io.BytesIO()
         self.primary.save(self.primaryData, format="WEBP")

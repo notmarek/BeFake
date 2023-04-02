@@ -157,13 +157,15 @@ def parse_friends(bf, save_location):
 @cli.command(help="Post the photos under /data/photos to your feed")
 @click.option('visibility', '--visibility', "-v", type=click.Choice(['friends', 'friends-of-friends', 'public']), default='friends', show_default=True, help="Set post visibility")
 @click.option('caption', '--caption', "-c", type=click.STRING, default='', show_default=False, help="Post caption")
-@click.option('location', '--location', "-l", type=float, nargs=2, help="Post location, in latitude, longitude format.")
+@click.option('location', '--location', "-l", type=float, nargs=2, default=[None, None], help="Post location, in latitude, longitude format.")
 @click.option('retakes', '--retakes', "-r", type=int, default=0, show_default=True, help="Retake counter")
-@click.option('resize', '--no-resize', "-R", default=True, show_default=True, help="Do not resize image to upload spec (1500, 2000), upload as is."
+@click.option('resize', '--no-resize', "-R", default=True, show_default=True, help="Do not resize image to upload spec (1500, 2000), upload as is.")
 @click.argument('primary_path', required=False, type=click.STRING)
 @click.argument('secondary_path', required=False, type=click.STRING)
 @load_bf
-def post(bf, visibility, caption, location, retakes, primary_path, secondary_path):
+def post(bf, visibility, caption, location, retakes, primary_path, secondary_path, resize):
+    if location != [None, None]:
+        loc = Location(location[0], location[1])
     primary_path = "data/photos/primary.jpg" if not primary_path else primary_path
     secondary_path = "data/photos/secondary.jpg" if not secondary_path else secondary_path
     with open("data/photos/primary.jpg", "rb") as f:

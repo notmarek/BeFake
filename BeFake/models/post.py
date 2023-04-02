@@ -33,10 +33,9 @@ class Post(object):
         self.late_in_seconds = data_dict.get("lateInSeconds", None)
         self.caption = data_dict.get("caption", None)
         self.public = data_dict.get("isPublic", None)
-        self.location = Location(
-            lat=data_dict.get("latitude", None),
-            lon=data_dict.get("longitude", None),
-        )
+        self.location = data_dict.get("location", None)
+        if self.location is not None:
+            self.location = Location(self.location["_latitude"], self.location["_longitude"])
         self.retakes = data_dict.get("retakeCounter", None)
         self.creation_date = data_dict.get("creationDate", None)
         if self.creation_date is not None:
@@ -78,10 +77,6 @@ class Post(object):
             "isLate": is_late,
             "retakeCounter": retakes,
             "takenAt": taken_at,
-            "location": {
-                "latitude": location.lat,
-                "longitude": location.lon
-            },
             "caption": caption,
             "visibility": [
                 visibility
@@ -99,6 +94,8 @@ class Post(object):
                 "path": postUpload.secondaryPath,
             },
         }
+        if location is not None: # when gps coordinates have been specified
+            json_data["location"] = {"latitude": location.lat, "longitude": location.lon}
 
         res = self.client.post(f"{self.api_url}/content/posts", json=json_data, headers={"authorization": self.token})
         if res.status_code not in (200, 201):
@@ -116,7 +113,9 @@ class Post(object):
         self.taken_at = res.get("takenAt", None)
         if self.taken_at is not None:
             self.taken_at = pendulum.parse(self.taken_at)
-        self.location = Location(json=res["location"])
+        self.location = res.get("location", None)
+        if self.location is not None:
+            self.location = Location(json=res["location"])
         self.user = User(res.get("user", {}), self)
 
         return res
@@ -166,3 +165,6 @@ class Location:
         if json is not None:
             self.lat = json["latitude"]
             self.lon = json["longitude"]
+
+    def __repr__(self):
+        return f"<Location {self.lat}, {self.lon}>"
