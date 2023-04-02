@@ -315,6 +315,16 @@ class BeFake:
         res = self.api_request("post", "content/comments", params=payload, data=data)
         return res
 
+    def delete_comment(self, post_id, comment_id):
+        payload = {
+            "postId": post_id,
+        }
+        data = {
+            "commentIds": comment_id,
+        }
+        res = self.api_request("delete", "content/comments", params=payload, data=data)
+        return res
+
     def upload_realmoji(self, image_file: bytes, emoji_type: str):
         picture = RealmojiPicture({})
         path = picture.upload(self, image_file)
@@ -370,20 +380,24 @@ class BeFake:
                               json=json_data)
         return res
 
-    def post_instant_realmoji(self, post_id: str, image_file: bytes):
-        name = self.upload_realmoji(image_file, "instant")
+    def post_instant_realmoji(self, post_id: str, owner_id: str, image_file: bytes):
+        picture = RealmojiPicture({})
+        path = picture.upload(self, image_file)
         json_data = {
-            "data": {
-                "action": "add",
-                "emoji": "⚡",
-                "ownerId": self.user_id,
-                "photoId": post_id,
-                "type": "instant",
-                "uri": name
+            "media": {
+                "bucket": "storage.bere.al",
+                "path": path,
+                "width": 500,
+                "height": 500
             }
         }
-        res = self.client.post("https://us-central1-alexisbarreyat-bereal.cloudfunctions.net/sendRealMoji",
-                               json=json_data, headers={"authorization": f"Bearer {self.token}"})
+        payload = {
+            "postId": post_id,
+            "postUserId": owner_id
+        }
+
+        res = self.client.put("https://mobile.bereal.com/api/content/realmojis/instant", params=payload,
+                               content=json.dumps(json_data), headers={"authorization": f"Bearer {self.token}", "content-type": "application/json;charset=utf-8"})
         return res.json()
 
     # works also for not friends and unpublic post with given post_id

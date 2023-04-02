@@ -13,10 +13,12 @@ import click
 
 DATA_DIR = "data"
 
+
 def load_bf(func):
     """
     Loads the BeFake object and passes it as the first argument to the function.
     """
+
     @wraps(func)
     def wrapper(*args, **kwargs):
         bf = BeFake()
@@ -25,7 +27,9 @@ def load_bf(func):
         except:
             raise Exception("No token found, are you logged in?")
         return func(bf, *args, **kwargs)
+
     return wrapper
+
 
 @click.group()
 @click.pass_context
@@ -102,7 +106,7 @@ def feed(bf, feed_id, save_location, realmoji_location, instant_realmoji_locatio
             print("saving memory", item.memory_day)
             _save_location = save_location.format(date=item.memory_day)
         else:
-            print(f"saving post by {item.user.username}".ljust(50, " "),f"{item.id}")
+            print(f"saving post by {item.user.username}".ljust(50, " "), f"{item.id}")
             post_date = item.creation_date.format(date_format)
             _save_location = save_location.format(user=item.user.username, date=post_date, feed_id=feed_id,
                                                   post_id=item.id)
@@ -122,8 +126,8 @@ def feed(bf, feed_id, save_location, realmoji_location, instant_realmoji_locatio
 
             # Format realmoji location
             _realmoji_location = _realmoji_location.format(user=emoji.username, type=emoji.type, feed_id=feed_id,
-                                                            post_date=post_date, post_user=item.username,
-                                                            post_id=item.id, date='{date}')
+                                                           post_date=post_date, post_user=item.username,
+                                                           post_id=item.id, date='{date}')
 
             # Getting the realmoji creation date sends an extra request
             # Only use that if it's actually needed
@@ -154,12 +158,16 @@ def parse_friends(bf, save_location):
             creation_date = friend.profile_picture.get_date().format(date_format)
             friend.profile_picture.download(f"{_save_location}/{creation_date}_profile_picture")
 
+
 @cli.command(help="Post the photos under /data/photos to your feed")
-@click.option('visibility', '--visibility', "-v", type=click.Choice(['friends', 'friends-of-friends', 'public']), default='friends', show_default=True, help="Set post visibility")
+@click.option('visibility', '--visibility', "-v", type=click.Choice(['friends', 'friends-of-friends', 'public']),
+              default='friends', show_default=True, help="Set post visibility")
 @click.option('caption', '--caption', "-c", type=click.STRING, default='', show_default=False, help="Post caption")
-@click.option('location', '--location', "-l", type=float, nargs=2, default=[None, None], help="Post location, in latitude, longitude format.")
+@click.option('location', '--location', "-l", type=float, nargs=2, default=[None, None],
+              help="Post location, in latitude, longitude format.")
 @click.option('retakes', '--retakes', "-r", type=int, default=0, show_default=True, help="Retake counter")
-@click.option('resize', '--no-resize', "-R", default=True, show_default=True, help="Do not resize image to upload spec (1500, 2000), upload as is.")
+@click.option('resize', '--no-resize', "-R", default=True, show_default=True,
+              help="Do not resize image to upload spec (1500, 2000), upload as is.")
 @click.argument('primary_path', required=False, type=click.STRING)
 @click.argument('secondary_path', required=False, type=click.STRING)
 @load_bf
@@ -172,8 +180,10 @@ def post(bf, visibility, caption, location, retakes, primary_path, secondary_pat
         primary_bytes = f.read()
     with open("data/photos/secondary.jpg", "rb") as f:
         secondary_bytes = f.read()
-    r = Post.create_post(bf, primary=primary_bytes, secondary=secondary_bytes, is_late=False, visibility=visibility, caption=caption, location=loc, retakes=retakes, resize=resize)
+    r = Post.create_post(bf, primary=primary_bytes, secondary=secondary_bytes, is_late=False, visibility=visibility,
+                         caption=caption, location=loc, retakes=retakes, resize=resize)
     print(r)
+
 
 @cli.command(help="View an invidual post")
 @click.argument("feed_id", type=click.Choice(["friends", "friends-of-friends", "discovery"]))
@@ -192,7 +202,6 @@ def get_post(bf, feed_id, post_id):
             print(post.__dict__)
 
 
-
 @cli.command(help="Upload random photoes to BeReal Servers")
 @click.argument("filename", type=click.STRING)
 @load_bf
@@ -202,6 +211,7 @@ def upload(bf, filename):
     r = bf.upload(data)
     print(f"Your file is now uploaded to:\n\t{r}")
 
+
 @cli.command(help="Add a comment to a post")
 @click.argument("post_id", type=click.STRING)
 @click.argument("content", type=click.STRING)
@@ -210,6 +220,16 @@ def comment(bf, post_id, content):
     r = bf.add_comment(post_id, content)
     print(r)
 
+
+@cli.command(help="Delete a given comment")
+@click.argument("post_id", type=click.STRING)
+@click.argument("comment_id", type=click.STRING)
+@load_bf
+def remove_comment(bf, post_id, comment_id):
+    r = bf.delete_comment(post_id, comment_id)
+    print(r)
+
+
 @cli.command(help="Pretend to screenshot a post")
 @click.argument("post_id", type=click.STRING)
 @load_bf
@@ -217,11 +237,13 @@ def screenshot(bf, post_id):
     r = bf.take_screenshot(post_id)
     print(r)
 
+
 @cli.command(help="Delete your post")
 @load_bf
 def delete_post(bf):
     r = bf.delete_post()
     print(r)
+
 
 @cli.command(help="Change the caption of your post")
 @click.argument("caption", type=click.STRING)
@@ -229,6 +251,7 @@ def delete_post(bf):
 def change_caption(bf, caption):
     r = bf.change_caption(caption)
     print(r)
+
 
 @cli.command(help="Gets information about a user profile")
 @click.argument("user_id", type=click.STRING)
@@ -247,6 +270,7 @@ def send_push_notification(bf, user_id, username):
     r = bf.send_capture_in_progress_push(topic=user_id if user_id else None, username=username if username else None)
     print(r)
 
+
 @cli.command(help="post an instant realmoji")
 @click.argument("post_id", type=click.STRING)
 @click.argument("user_id", type=click.STRING)
@@ -260,6 +284,7 @@ def instant_realmoji(bf, post_id, user_id, filename):
     r = bf.post_instant_realmoji(post_id, user_id, data)
     print(r)
 
+
 @cli.command(help="Upload an emoji-specific realmoji")
 @click.argument("type", type=click.Choice(["up", "happy", "surprised", "laughing", "heartEyes"]))
 @click.argument("filename", required=False, type=click.STRING)
@@ -271,6 +296,7 @@ def upload_realmoji(bf, type, filename):
         data = f.read()
     r = bf.upload_realmoji(data, emoji_type=type)
     print(r)
+
 
 # currently broken, gives internal server error
 @cli.command(help="Add realmoji to post")
@@ -284,12 +310,14 @@ def emoji_realmoji(bf, post_id, user_id, type):
     r2 = bf.post_realmoji(post_id, user_id, emoji_type=type)
     print(r2)
 
+
 @cli.command(help="Search for a given username.")
 @click.argument("username", type=click.STRING)
 @load_bf
 def search_user(bf, username):
     r = bf.search_username(username)
     print(r)
+
 
 # TODO: there's probably a better way of doing this, for instance having friend-request <add|view|cancel>.
 @cli.command(help="Get friend requests")
@@ -299,13 +327,16 @@ def friend_requests(bf, operation):
     r = bf.get_friend_requests(operation)
     print(r)
 
+
 @cli.command(help="Send friend request")
 @click.argument("user_id", type=click.STRING)
-@click.option("-s", "--source", "source", type=click.Choice(["search", "contacts", "suggestion"]), default="search", show_default=True, help="Where you first found about the user")
+@click.option("-s", "--source", "source", type=click.Choice(["search", "contacts", "suggestion"]), default="search",
+              show_default=True, help="Where you first found about the user")
 @load_bf
 def new_friend_request(bf, user_id, source):
     r = bf.add_friend(user_id, source)
     print(r)
+
 
 @cli.command(help="Cancel friend request")
 @click.argument("user_id", type=click.STRING)
@@ -314,11 +345,13 @@ def cancel_friend_request(bf, user_id):
     r = bf.remove_friend_request(user_id)
     print(r)
 
+
 @cli.command(help="get settings")
 @load_bf
 def settings(bf):
     r = bf.get_settings()
     print(r)
+
 
 if __name__ == "__main__":
     cli(obj={})
