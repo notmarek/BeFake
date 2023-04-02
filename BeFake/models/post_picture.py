@@ -8,6 +8,7 @@ class PostUpload:
     """
 
     def __init__(self, primary: bytes, secondary: bytes):
+        newsize = (1500, 2000)
         self.primary = Image.open(io.BytesIO(primary))
         self.secondary = Image.open(io.BytesIO(secondary))
         mime_type1 = Image.MIME[self.primary.format]
@@ -19,6 +20,10 @@ class PostUpload:
         if mime_type2 != "image/webp":
             if not self.secondary.mode == "RGB":
                 self.secondary = self.secondary.convert("RGB")
+        
+        # image resizing (1500, 2000)
+        self.primary = self.primary.resize(newsize)
+        self.secondary = self.secondary.resize(newsize)
 
         self.primaryData = io.BytesIO()
         self.primary.save(self.primaryData, format="WEBP")
