@@ -273,7 +273,7 @@ def send_push_notification(bf, user_id, username):
 
 @cli.command(help="post an instant realmoji")
 @click.argument("post_id", type=click.STRING)
-@click.argument("user_id", type=click.STRING)
+@click.argument("user_id", type=click.STRING, required=False)
 @click.argument("filename", required=False, type=click.STRING)
 @load_bf
 def instant_realmoji(bf, post_id, user_id, filename):
@@ -301,7 +301,7 @@ def upload_realmoji(bf, type, filename):
 # currently broken, gives internal server error
 @cli.command(help="Add realmoji to post")
 @click.argument("post_id", type=click.STRING)
-@click.argument("user_id", type=click.STRING)
+@click.argument("user_id", type=click.STRING, required=False)
 @click.argument("type", type=click.Choice(["up", "happy", "surprised", "laughing", "heartEyes"]))
 @load_bf
 def emoji_realmoji(bf, post_id, user_id, type):
