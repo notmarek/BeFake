@@ -98,7 +98,18 @@ class BeFake:
         # TODO: Include error message in exception
         return res.json()
 
-    def send_otp(self, phone: str) -> None:
+    def send_otp_firebase(self, phone: str) -> None:
+        res = self.client.post(
+            "https://www.googleapis.com/identitytoolkit/v3/relyingparty/sendVerificationCode",
+            params={"key": self.gapi_key},
+            data={
+                "phoneNumber": phone,
+                "iosReceipt": "AEFDNu9QZBdycrEZ8bM_2-Ei5kn6XNrxHplCLx2HYOoJAWx-uSYzMldf66-gI1vOzqxfuT4uJeMXdreGJP5V1pNen_IKJVED3EdKl0ldUyYJflW5rDVjaQiXpN0Zu2BNc1c",
+            },
+        ).json()
+        self.otp_session = res["sessionInfo"]
+
+    def send_otp_vonage(self, phone: str) -> None:
         self.phone = phone
         data = {
             "phoneNumber": phone,
@@ -110,54 +121,56 @@ class BeFake:
                 "user-agent": "BeReal/8586 CFNetwork/1240.0.4 Darwin/20.6.0",
             },
             data=data)
-        if vonageRes.json()["status"] != 0:
+        if vonageRes.json()["status"] != '0':
             print("WARNING: " + vonageRes.json()["errorText"])
             print("If you already received a code before, ignore the warning and enter it.")
         if vonageRes.status_code == 200:
-            self.vonageRequestId = vonageRes.json()["vonageRequestId"]
-        else:
-            res = self.client.post(
-                "https://www.googleapis.com/identitytoolkit/v3/relyingparty/sendVerificationCode",
-                params={"key": self.gapi_key},
-                data={
-                    "phoneNumber": phone,
-                    "iosReceipt": "AEFDNu9QZBdycrEZ8bM_2-Ei5kn6XNrxHplCLx2HYOoJAWx-uSYzMldf66-gI1vOzqxfuT4uJeMXdreGJP5V1pNen_IKJVED3EdKl0ldUyYJflW5rDVjaQiXpN0Zu2BNc1c",
-                },
-            ).json()
-            self.otp_session = res["sessionInfo"]
+            self.otp_session = vonageRes.json()["vonageRequestId"]
 
-    def verify_otp(self, otp: str) -> None:
-        if self.vonageRequestId is not None:
-            vonageRes = self.client.post("https://auth.bereal.team/api/vonage/check-code", data={
+    def verify_otp_firebase(self, otp: str) -> None:
+        if self.otp_session is None:
+            raise Exception("No open otp session (firebase).")
+
+        res = self.client.post(
+            "https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyPhoneNumber",
+            params={"key": self.gapi_key},
+            data={
+                "sessionInfo": self.otp_session,
                 "code": otp,
-                "vonageRequestId": self.vonageRequestId
-            }).json()
-            res = self.client.post("https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyCustomToken",
-                                   params={"key": self.gapi_key}, data={
-                    "token": vonageRes["token"],
-                    "returnSecureToken": True
-                }).json()
-        elif self.otp_session is not None:
-            res = self.client.post(
-                "https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyPhoneNumber",
-                params={"key": self.gapi_key},
-                data={
-                    "sessionInfo": self.otp_session,
-                    "code": otp,
-                    "operation": "SIGN_UP_OR_IN",
-                },
-            ).json()
-
-        else:
-            raise Exception("No open otp/vonage session.")
+                "operation": "SIGN_UP_OR_IN",
+            },
+        ).json()
 
         self.token = res["idToken"]
         self.token_info = json.loads(b64decode(res["idToken"].split(".")[1] + '=='))
         self.refresh_token = res["refreshToken"]
         self.expiration = pendulum.now().add(seconds=int(res["expiresIn"]))
-        if self.vonageRequestId is None:
-            self.user_id = res["localId"]
-            self.phone = res["phoneNumber"]
+        self.user_id = res["localId"]
+        self.phone = res["phoneNumber"]
+
+    def verify_otp_vonage(self, otp: str) -> None:
+        if self.otp_session is None:
+            raise Exception("No open otp session (vonage).")
+        vonageRes = self.client.post("https://auth.bereal.team/api/vonage/check-code", data={
+            "code": otp,
+            "vonageRequestId": self.otp_session
+        })
+        # TODO: better error handling and retries
+        if vonageRes.status_code != 200:
+            print("Error: " + vonageRes.json()["message"])
+            print("Make sure you entered the right code")
+        vonageRes = vonageRes.json()
+        res = self.client.post("https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyCustomToken",
+                       params={"key": self.gapi_key}, data={
+                    "token": vonageRes["token"],
+                    "returnSecureToken": True
+        }).json()
+        self.token = res["idToken"]
+        self.token_info = json.loads(b64decode(res["idToken"].split(".")[1] + '=='))
+        self.refresh_token = res["refreshToken"]
+        self.expiration = pendulum.now().add(seconds=int(res["expiresIn"]))
+
+
 
     def refresh_tokens(self) -> None:
         if self.refresh_token is None:

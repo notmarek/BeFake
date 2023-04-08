@@ -42,13 +42,22 @@ def cli(ctx):
 @cli.command(help="Login to BeReal")
 @click.argument("phone_number", type=str)
 @click.argument("deviceid", type=str, default=''.join(random.choices(string.ascii_lowercase + string.digits, k=16)))
-def login(phone_number, deviceid):
+@click.option("backend", "--backend", "-b", type=click.Choice(["vonage", "firebase"]), default="vonage",
+              show_default=True)
+def login(phone_number, deviceid, backend):
     bf = BeFake(deviceId=deviceid)
-    bf.send_otp(phone_number)
-    otp = input("Enter otp: ")
-    bf.verify_otp(otp)
-    bf.save()
-    print("Login successful.")
+    if backend == "vonage":
+        bf.send_otp_vonage(phone_number)
+        otp = input("Enter otp: ")
+        bf.verify_otp_vonage(otp)
+        bf.save()
+        print("Vonage login successful.")
+    elif backend == "firebase":
+        bf.send_otp_firebase(phone_number)
+        otp = input("Enter otp: ")
+        bf.verify_otp_firebase(otp)
+        bf.save()
+        print("Firebase login successful.")
     print("You can now try to use the other commands ;)")
 
 
