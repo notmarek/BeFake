@@ -219,13 +219,7 @@ class BeFake:
         return res
 
     def delete_post(self):
-        res = self.client.post(
-            "https://us-central1-alexisbarreyat-bereal.cloudfunctions.net/deleteBeReal",
-            headers={
-                "authorization": f"Bearer {self.token}",
-            },
-            json={"data": {"uid": None}}
-        ).json()
+        res = self.api_request("delete", "content/posts")
         return res
 
     def get_memories_video(self):
