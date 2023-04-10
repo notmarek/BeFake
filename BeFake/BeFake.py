@@ -1,3 +1,4 @@
+import urllib.parse
 from base64 import b64decode
 import json
 from typing import Optional
@@ -98,7 +99,7 @@ class BeFake:
         # TODO: Include error message in exception
         return res.json()
 
-    def send_otp_firebase(self, phone: str) -> None:
+    def send_otp_firebase(self, phone: str) -> None:  # iOS Firebase OTP
         res = self.client.post(
             "https://www.googleapis.com/identitytoolkit/v3/relyingparty/sendVerificationCode",
             params={"key": self.gapi_key},
@@ -107,6 +108,29 @@ class BeFake:
                 "iosReceipt": "AEFDNu9QZBdycrEZ8bM_2-Ei5kn6XNrxHplCLx2HYOoJAWx-uSYzMldf66-gI1vOzqxfuT4uJeMXdreGJP5V1pNen_IKJVED3EdKl0ldUyYJflW5rDVjaQiXpN0Zu2BNc1c",
             },
         ).json()
+        self.otp_session = res["sessionInfo"]
+
+    def get_recaptcha_url(self):
+        validUrlRes = self.client.get("https://www.googleapis.com/identitytoolkit/v3/relyingparty/getProjectConfig",
+                                      params={"key": self.gapi_key}).json()
+        recaptcha_instances = validUrlRes["authorizedDomains"]
+        payload = {'apiKey': self.gapi_key, 'authType': 'verifyApp',
+                   'apn': 'com.bereal.ft', 'v': 'XX21001000', 'eid': 'p',
+                   'appName': '[DEFAULT]', 'sha1Cert': '1d14ab0c48b1b2ad252c79d65f48bae37aefe8bb',
+                   'publicKey': 'CKHQydkDEtsBCs4BCj10eXBlLmdvb2dsZWFwaXMuY29tL2dvb2dsZS5jcnlwdG8udGluay5FY2ll\nc0FlYWRIa2RmUHVibGljS2V5EooBEkQKBAgCEAMSOhI4CjB0eXBlLmdvb2dsZWFwaXMuY29tL2dv\nb2dsZS5jcnlwdG8udGluay5BZXNHY21LZXkSAhAQGAEYARogDBxbrkTTsYg1gvrVOX-qAi4i64nb\n_d_VC_WLuZuJ98oiIAVLfq0TkXxNNDATcMIb2OjBdxyJtqAkUMdU6kNGqjn1GAMQARih0MnZAyAB'}
+
+        return "https://" + recaptcha_instances[1] + "/__/auth/handler?" + urllib.parse.urlencode(payload)
+
+    def send_otp_recaptcha(self, recaptchaToken: str, phone: str):  #
+        payload = {
+            "phoneNumber": phone,
+            "recaptchaToken": recaptchaToken,
+        }
+
+        res = self.client.post(
+            "https://www.googleapis.com/identitytoolkit/v3/relyingparty/sendVerificationCode",
+            params={"key": self.gapi_key},
+            data=payload).json()
         self.otp_session = res["sessionInfo"]
 
     def send_otp_vonage(self, phone: str) -> None:
@@ -161,16 +185,14 @@ class BeFake:
             print("Make sure you entered the right code")
         vonageRes = vonageRes.json()
         res = self.client.post("https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyCustomToken",
-                       params={"key": self.gapi_key}, data={
-                    "token": vonageRes["token"],
-                    "returnSecureToken": True
-        }).json()
+                               params={"key": self.gapi_key}, data={
+                "token": vonageRes["token"],
+                "returnSecureToken": True
+            }).json()
         self.token = res["idToken"]
         self.token_info = json.loads(b64decode(res["idToken"].split(".")[1] + '=='))
         self.refresh_token = res["refreshToken"]
         self.expiration = pendulum.now().add(seconds=int(res["expiresIn"]))
-
-
 
     def refresh_tokens(self) -> None:
         if self.refresh_token is None:
@@ -194,13 +216,12 @@ class BeFake:
         # here for example we have a firebase-instance-id-token header with the value from the next line, that we can just ignore (but maybe we need it later, there seem to be some changes to the API especially endpoints moving tho the cloudfunctions.net server)
         # cTn8odwxQo6DR0WFVnM9TJ:APA91bGV86nmQUkqnLfFv18IhpOak1x02sYMmKvpUAqhdfkT9Ofg29BXKXS2mbt9oE-LoHiiKViXw75xKFLeOxhb68wwvPCJF79z7V5GbCsIQi7XH1RSD8ItcznqM_qldSDjghf5N8Uo
         res = self.client.get(f"{self.api_url}/person/profiles/{user_id}",
-                               headers={"authorization": f"Bearer {self.token}"}).json()
+                              headers={"authorization": f"Bearer {self.token}"}).json()
         return User(res, self)
 
     def get_friends_feed(self):
         res = self.api_request("get", "feeds/friends")
         return [Post(p, self) for p in res]
-
 
     def get_fof_feed(self):  # friends of friends feed
         res = self.api_request("get", "feeds/friends-of-friends")
@@ -232,12 +253,12 @@ class BeFake:
 
     def add_friend(self, user_id: str, source: str):
         res = self.api_request("post",
-            "relationships/friend-requests",
-            data={
-                "userId": user_id,
-                "source": source,
-            },
-        )
+                               "relationships/friend-requests",
+                               data={
+                                   "userId": user_id,
+                                   "source": source,
+                               },
+                               )
         return User(res, self)
 
     def get_friends(self):
@@ -268,11 +289,11 @@ class BeFake:
             for phone_number in phone_numbers
         ]
         res = self.api_request("post",
-            "/relationships/contacts",
-            data={
-                "phoneNumbers": hashed_phone_numbers,
-            },
-        )
+                               "/relationships/contacts",
+                               data={
+                                   "phoneNumbers": hashed_phone_numbers,
+                               },
+                               )
         return [User(user, self) for user in res]
 
     def get_user_by_phone_number(self, phone_number: str):
@@ -357,6 +378,7 @@ class BeFake:
 
         res = self.api_request("put", "person/me/realmojis", data=data, headers={"authorization": self.token})
         return res
+
     # IT WORKS!!!!
 
     def post_realmoji(
@@ -384,7 +406,7 @@ class BeFake:
             "emoji": emojis[emoji_type]
         }
         res = self.api_request("put", f"/content/realmojis", params=payload,
-                              json=json_data)
+                               json=json_data)
         return res
 
     def post_instant_realmoji(self, post_id: str, owner_id: str, image_file: bytes):
@@ -404,7 +426,8 @@ class BeFake:
         }
 
         res = self.client.put("https://mobile.bereal.com/api/content/realmojis/instant", params=payload,
-                               content=json.dumps(json_data), headers={"authorization": f"Bearer {self.token}", "content-type": "application/json;charset=utf-8"})
+                              content=json.dumps(json_data), headers={"authorization": f"Bearer {self.token}",
+                                                                      "content-type": "application/json;charset=utf-8"})
         return res.json()
 
     # works also for not friends and unpublic post with given post_id
@@ -413,8 +436,8 @@ class BeFake:
             "postId": post_id,
         }
         res = self.api_request("get", f"content/realmojis",
-                              params=payload,
-                              )
+                               params=payload,
+                               )
         return res
 
     def search_username(self, username):

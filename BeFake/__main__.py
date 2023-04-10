@@ -42,7 +42,7 @@ def cli(ctx):
 @cli.command(help="Login to BeReal")
 @click.argument("phone_number", type=str)
 @click.argument("deviceid", type=str, default=''.join(random.choices(string.ascii_lowercase + string.digits, k=16)))
-@click.option("backend", "--backend", "-b", type=click.Choice(["vonage", "firebase"]), default="vonage",
+@click.option("backend", "--backend", "-b", type=click.Choice(["vonage", "firebase", "recaptcha"]), default="vonage",
               show_default=True)
 def login(phone_number, deviceid, backend):
     bf = BeFake(deviceId=deviceid)
@@ -58,6 +58,18 @@ def login(phone_number, deviceid, backend):
         bf.verify_otp_firebase(otp)
         bf.save()
         print("Firebase login successful.")
+    elif backend == "recaptcha":
+        print("Follow the instructions at https://github.com/notmarek/BeFake/wiki/reCAPTCHA for your operating system.")
+        print("\n\nOpen the following URL:")
+        print(bf.get_recaptcha_url())
+        print()
+        recaptcha_token = input("Enter reCAPTCHA token: ")
+        bf.send_otp_recaptcha(recaptcha_token, phone_number)
+        otp = input("Enter otp: ")
+        bf.verify_otp_firebase(otp)
+        bf.save()
+        print("Firebase reCAPTCHA login successful.")
+
     print("You can now try to use the other commands ;)")
 
 
