@@ -3,7 +3,9 @@
  <img src="./assets/befake-black.png">
 </picture>
 
-A cool tool for collecting all your friends photos from BeReal (including RealMojis) without taking any screenshots or even opening the app.
+A cool tool for collecting all your friends photos from BeReal (including RealMojis) without taking any screenshots, opening the app, annoying analytics and much much more!
+
+A near total coverage of BeReals mobile API is planned and nearly done, except a few things.
 
 ## Install
 ```bash

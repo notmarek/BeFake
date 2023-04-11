@@ -1,11 +1,35 @@
 import json
 import os
 from pathlib import Path
+from functools import wraps
+
+import string
+import random
+
 from .BeFake import BeFake
 from .models.post import Post, Location
+
 import click
 
 DATA_DIR = Path("data")
+
+
+def load_bf(func):
+    """
+    Loads the BeFake object and passes it as the first argument to the function.
+    """
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        bf = BeFake()
+        try:
+            bf.load()
+        except:
+            raise Exception("No token found, are you logged in?")
+        return func(bf, *args, **kwargs)
+
+    return wrapper
+
 
 @click.group()
 @click.pass_context
@@ -17,32 +41,49 @@ def cli(ctx):
 
 @cli.command(help="Login to BeReal")
 @click.argument("phone_number", type=str)
-def login(phone_number):
-    bf = BeFake()
-    bf.send_otp(phone_number)
-    otp = input("Enter otp: ")
-    bf.verify_otp(otp)
-    bf.save()
-    print("Login successful.")
+@click.argument("deviceid", type=str, default=''.join(random.choices(string.ascii_lowercase + string.digits, k=16)))
+@click.option("backend", "--backend", "-b", type=click.Choice(["vonage", "firebase", "recaptcha"]), default="vonage",
+              show_default=True)
+def login(phone_number, deviceid, backend):
+    bf = BeFake(deviceId=deviceid)
+    if backend == "vonage":
+        bf.send_otp_vonage(phone_number)
+        otp = input("Enter otp: ")
+        bf.verify_otp_vonage(otp)
+        bf.save()
+        print("Vonage login successful.")
+    elif backend == "firebase":
+        bf.send_otp_firebase(phone_number)
+        otp = input("Enter otp: ")
+        bf.verify_otp_firebase(otp)
+        bf.save()
+        print("Firebase login successful.")
+    elif backend == "recaptcha":
+        print("Follow the instructions at https://github.com/notmarek/BeFake/wiki/reCAPTCHA for your operating system.")
+        print("\n\nOpen the following URL:")
+        print(bf.get_recaptcha_url())
+        print()
+        recaptcha_token = input("Enter reCAPTCHA token: ")
+        bf.send_otp_recaptcha(recaptcha_token, phone_number)
+        otp = input("Enter otp: ")
+        bf.verify_otp_firebase(otp)
+        bf.save()
+        print("Firebase reCAPTCHA login successful.")
+
     print("You can now try to use the other commands ;)")
 
 
 @cli.command(help="Get info about your account")
-def me():
-    bf = BeFake()
-    bf.load()
+@load_bf
+def me(bf):
     user = bf.get_user_info()
     print(user)
     print(user.__dict__)
 
 
 @cli.command(help="Refresh token")
-def refresh():
-    bf = BeFake()
-    try:
-        bf.load()
-    except:
-        raise Exception("No token found, are you logged in?")
+@load_bf
+def refresh(bf):
     bf.refresh_tokens()
     print(bf.token, end='', flush=True)
     bf.save()
@@ -53,14 +94,10 @@ def refresh():
 @click.option("--save-location", type=click.Path(file_okay=False), help="The paths where the posts should be downloaded")
 @click.option("--realmoji-location", type=click.Path(file_okay=False), help="The paths where the (non-instant) realmojis should be downloaded")
 @click.option("--instant-realmoji-location", type=click.Path(file_okay=False), help="The paths where the instant realmojis should be downloaded")
-def feed(feed_id, save_location, realmoji_location, instant_realmoji_location):
+@load_bf
+def feed(bf, feed_id, save_location, realmoji_location, instant_realmoji_location):
     date_format = 'YYYY-MM-DD_HH-mm-ss'
-
-    bf = BeFake()
-    try:
-        bf.load()
-    except:
-        raise Exception("No token found, are you logged in?")
+    
     FEED_GETTERS = {
         "friends": bf.get_friends_feed,
         "friends-of-friends": bf.get_fof_feed,
@@ -92,7 +129,7 @@ def feed(feed_id, save_location, realmoji_location, instant_realmoji_location):
             print("saving memory", item.memory_day)
             _save_location = save_location.format(date=item.memory_day)
         else:
-            print(f"saving post by {item.user.username}".ljust(50, " "),f"{item.id}")
+            print(f"saving post by {item.user.username}".ljust(50, " "), f"{item.id}")
             post_date = item.creation_date.format(date_format)
             _save_location = save_location.format(user=item.user.username, date=post_date, feed_id=feed_id,
                                                   post_id=item.id)
@@ -126,14 +163,10 @@ def feed(feed_id, save_location, realmoji_location, instant_realmoji_location):
 
 @cli.command(help="Download friends information")
 @click.option("--save-location", help="The directory where the data should be downloaded")
-def parse_friends(save_location):
+@load_bf
+def parse_friends(bf, save_location):
     date_format = 'YYYY-MM-DD_HH-mm-ss'
 
-    bf = BeFake()
-    try:
-        bf.load()
-    except:
-        raise Exception("No token found, are you logged in?")
     friends = bf.get_friends()
     if save_location is None:
         save_location = f"{DATA_DIR}" + "/friends/{user}"
@@ -148,90 +181,105 @@ def parse_friends(save_location):
             creation_date = friend.profile_picture.get_date().format(date_format)
             friend.profile_picture.download(f"{_save_location}/{creation_date}_profile_picture")
 
+
 @cli.command(help="Post the photos under /data/photos to your feed")
-@click.option('visibility', '--visibility', "-v", type=click.Choice(['friends', 'friends-of-friends', 'public']), default='friends', show_default=True, help="Set post visibility")
+@click.option('visibility', '--visibility', "-v", type=click.Choice(['friends', 'friends-of-friends', 'public']),
+              default='friends', show_default=True, help="Set post visibility")
+@click.option('caption', '--caption', "-c", type=click.STRING, default='', show_default=False, help="Post caption")
+@click.option('location', '--location', "-l", type=float, nargs=2, default=[None, None],
+              help="Post location, in latitude, longitude format.")
+@click.option('retakes', '--retakes', "-r", type=int, default=0, show_default=True, help="Retake counter")
+@click.option('resize', '--no-resize', "-R", default=True, show_default=True,
+              help="Do not resize image to upload spec (1500, 2000), upload as is.")
 @click.argument('primary_path', required=False, type=click.STRING)
 @click.argument('secondary_path', required=False, type=click.STRING)
-def post(visibility, primary_path, secondary_path):
+@load_bf
+def post(bf, visibility, caption, location, retakes, primary_path, secondary_path, resize):
+    if location != [None, None]:
+        loc = Location(location[0], location[1])
     primary_path = "data/photos/primary.jpg" if not primary_path else primary_path
     secondary_path = "data/photos/secondary.jpg" if not secondary_path else secondary_path
-    bf = BeFake()
-    try:
-        bf.load()
-    except Exception as ex:
-        raise Exception("No token found, are you logged in?")
     with open("data/photos/primary.jpg", "rb") as f:
         primary_bytes = f.read()
     with open("data/photos/secondary.jpg", "rb") as f:
         secondary_bytes = f.read()
-    r = Post.create_post(bf, primary=primary_bytes, secondary=secondary_bytes, is_late=False, visibility=visibility, caption="Insert your caption here", location=Location(0,0), retakes=0)
+    r = Post.create_post(bf, primary=primary_bytes, secondary=secondary_bytes, is_late=False, visibility=visibility,
+                         caption=caption, location=loc, retakes=retakes, resize=resize)
     print(r)
+
+
+@cli.command(help="View an invidual post")
+@click.argument("feed_id", type=click.Choice(["friends", "friends-of-friends", "discovery"]))
+@click.argument("post_id", type=click.STRING)
+@load_bf
+def get_post(bf, feed_id, post_id):
+    if feed_id == "friends":
+        feed = bf.get_friends_feed()
+    elif feed_id == "friends-of-friends":
+        feed = bf.get_fof_feed()
+    elif feed_id == "discovery":
+        feed = bf.get_discovery_feed()
+
+    for post in feed:
+        if post.id == post_id:
+            print(post.__dict__)
+
 
 @cli.command(help="Upload random photoes to BeReal Servers")
 @click.argument("filename", type=click.STRING)
-def upload(filename):
-    bf = BeFake()
-    try:
-        bf.load()
-    except Exception as ex:
-        raise Exception("No token found, are you logged in?")
+@load_bf
+def upload(bf, filename):
     with open(f"data/photos/{filename}", "rb") as f:
         data = f.read()
     r = bf.upload(data)
     print(f"Your file is now uploaded to:\n\t{r}")
 
+
 @cli.command(help="Add a comment to a post")
 @click.argument("post_id", type=click.STRING)
 @click.argument("content", type=click.STRING)
-def comment(post_id, content):
-    bf = BeFake()
-    try:
-        bf.load()
-    except Exception as ex:
-        raise Exception("No token found, are you logged in?")
+@load_bf
+def comment(bf, post_id, content):
     r = bf.add_comment(post_id, content)
     print(r)
 
+
+@cli.command(help="Delete a given comment")
+@click.argument("post_id", type=click.STRING)
+@click.argument("comment_id", type=click.STRING)
+@load_bf
+def remove_comment(bf, post_id, comment_id):
+    r = bf.delete_comment(post_id, comment_id)
+    print(r)
+
+
 @cli.command(help="Pretend to screenshot a post")
 @click.argument("post_id", type=click.STRING)
-def screenshot(post_id):
-    bf = BeFake()
-    try:
-        bf.load()
-    except Exception as ex:
-        raise Exception("No token found, are you logged in?")
+@load_bf
+def screenshot(bf, post_id):
     r = bf.take_screenshot(post_id)
     print(r)
 
+
 @cli.command(help="Delete your post")
-def delete_post():
-    bf = BeFake()
-    try:
-        bf.load()
-    except Exception as ex:
-        raise Exception("No token found, are you logged in?")
+@load_bf
+def delete_post(bf):
     r = bf.delete_post()
     print(r)
 
+
 @cli.command(help="Change the caption of your post")
 @click.argument("caption", type=click.STRING)
-def change_caption(caption):
-    bf = BeFake()
-    try:
-        bf.load()
-    except Exception as ex:
-        raise Exception("No token found, are you logged in?")
+@load_bf
+def change_caption(bf, caption):
     r = bf.change_caption(caption)
     print(r)
 
+
 @cli.command(help="Gets information about a user profile")
 @click.argument("user_id", type=click.STRING)
-def get_user_profile(user_id):
-    bf = BeFake()
-    try:
-        bf.load()
-    except Exception as ex:
-        raise Exception("No token found, are you logged in?")
+@load_bf
+def get_user_profile(bf, user_id):
     r = bf.get_user_profile(user_id)
     print(r)
     print(r.__dict__)
@@ -240,40 +288,31 @@ def get_user_profile(user_id):
 @cli.command(help="Sends a notification to your friends, saying you're taking a bereal")
 @click.argument("user_id", type=click.STRING, required=False)
 @click.argument("username", type=click.STRING, required=False)
-def send_push_notification(user_id, username):
-    bf = BeFake()
-    try:
-        bf.load()
-    except Exception as ex:
-        raise Exception("No token found, are you logged in?")
+@load_bf
+def send_push_notification(bf, user_id, username):
     r = bf.send_capture_in_progress_push(topic=user_id if user_id else None, username=username if username else None)
     print(r)
 
+
 @cli.command(help="post an instant realmoji")
 @click.argument("post_id", type=click.STRING)
+@click.argument("user_id", type=click.STRING, required=False)
 @click.argument("filename", required=False, type=click.STRING)
-def instant_realmoji(post_id, filename):
-    bf = BeFake()
-    try:
-        bf.load()
-    except Exception as ex:
-        raise Exception("No token found, are you logged in?")
+@load_bf
+def instant_realmoji(bf, post_id, user_id, filename):
     if not filename:
         filename = "primary.jpg"
     with open(f"data/photos/{filename}", "rb") as f:
         data = f.read()
-    r = bf.post_instant_realmoji(post_id, data)
+    r = bf.post_instant_realmoji(post_id, user_id, data)
     print(r)
+
 
 @cli.command(help="Upload an emoji-specific realmoji")
 @click.argument("type", type=click.Choice(["up", "happy", "surprised", "laughing", "heartEyes"]))
 @click.argument("filename", required=False, type=click.STRING)
-def upload_realmoji(type, filename):
-    bf = BeFake()
-    try:
-        bf.load()
-    except Exception as ex:
-        raise Exception("No token found, are you logged in?")
+@load_bf
+def upload_realmoji(bf, type, filename):
     if not filename:
         filename = f"{type}.jpg"
     with open(f"data/photos/{filename}", "rb") as f:
@@ -281,21 +320,60 @@ def upload_realmoji(type, filename):
     r = bf.upload_realmoji(data, emoji_type=type)
     print(r)
 
+
 # currently broken, gives internal server error
 @cli.command(help="Add realmoji to post")
 @click.argument("post_id", type=click.STRING)
-@click.argument("user_id", type=click.STRING)
+@click.argument("user_id", type=click.STRING, required=False)
 @click.argument("type", type=click.Choice(["up", "happy", "surprised", "laughing", "heartEyes"]))
-def emoji_realmoji(post_id, user_id, type):
+@load_bf
+def emoji_realmoji(bf, post_id, user_id, type):
     type = str(type)
-    bf = BeFake()
-    try:
-        bf.load()
-    except Exception as ex:
-        raise Exception("No token found, are you logged in?")
     # we don't have any method to know which realmojis (mapped to a type) the user already uploaded, we think, the client just stores the urls to uploaded realmojis and sends them...
     r2 = bf.post_realmoji(post_id, user_id, emoji_type=type)
     print(r2)
+
+
+@cli.command(help="Search for a given username.")
+@click.argument("username", type=click.STRING)
+@load_bf
+def search_user(bf, username):
+    r = bf.search_username(username)
+    print(r)
+
+
+# TODO: there's probably a better way of doing this, for instance having friend-request <add|view|cancel>.
+@cli.command(help="Get friend requests")
+@click.argument("operation", type=click.Choice(["sent", "received"]))
+@load_bf
+def friend_requests(bf, operation):
+    r = bf.get_friend_requests(operation)
+    print(r)
+
+
+@cli.command(help="Send friend request")
+@click.argument("user_id", type=click.STRING)
+@click.option("-s", "--source", "source", type=click.Choice(["search", "contacts", "suggestion"]), default="search",
+              show_default=True, help="Where you first found about the user")
+@load_bf
+def new_friend_request(bf, user_id, source):
+    r = bf.add_friend(user_id, source)
+    print(r)
+
+
+@cli.command(help="Cancel friend request")
+@click.argument("user_id", type=click.STRING)
+@load_bf
+def cancel_friend_request(bf, user_id):
+    r = bf.remove_friend_request(user_id)
+    print(r)
+
+
+@cli.command(help="get settings")
+@load_bf
+def settings(bf):
+    r = bf.get_settings()
+    print(r)
 
 
 if __name__ == "__main__":

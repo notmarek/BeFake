@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name='BeFake',
-    version='1.0.0',
+    version='1.0.1',
     description='BeReal Python API wrapper',
     long_description=open('README.md').read(),
     url='https://github.com/notmarek/BeFake',

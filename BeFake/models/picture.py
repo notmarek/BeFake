@@ -57,6 +57,7 @@ class Picture(object):
                     f.write(self.data)
 
         return r.content
+
     def get_date(self):
         if self.date:
             return self.date

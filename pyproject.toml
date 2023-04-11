@@ -13,7 +13,8 @@ authors = [
   { name="Péter Tombor" },
   { name="Benomity" },
   { name="Jorge Martínez" },
-  { name="jaannnis" }
+  { name="jaannnis" },
+  { name="Valérie Roux", email="vxlerieuwu@unixgirl.xyz"}
 ]
 description = "BeReal Python API wrapper"
 readme = "README.md"

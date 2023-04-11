@@ -24,12 +24,7 @@ class User(object):
         from .realmoji import RealMoji
         self.realmojis = [RealMoji(rm, befake) for rm in data_dict.get("realmojis", [])]
         self.terms = data_dict.get("terms", None)
-        self.devices = [Device(data_dict.get("clientVersion", None),
-            data_dict.get("device", None),
-            data_dict.get("deviceId", None),
-            data_dict.get("platform", None),
-            data_dict.get("language", None),
-            data_dict.get("timezone", None)) for device in data_dict.get("devices", [])]
+        self.devices = [Device(data_dict=device) for device in data_dict.get("devices", [])]
         self.stats = data_dict.get("stats", None)  # TODO: implement stats object
         self.can_delete_post = data_dict.get("canDeletePost", None)
         self.can_update_region = data_dict.get("canUpdateRegion", None)
@@ -39,7 +34,9 @@ class User(object):
         self.country_code = data_dict.get("countryCode", None)
         self.region = data_dict.get("region", None)
         self.created_at = data_dict.get("createdAt", None)
-        self.profile_picture = Picture(data_dict.get("profilePicture", {}))
+        self.profile_picture = data_dict.get("profilePicture", None)
+        if self.profile_picture is not None:
+            self.profile_picture = Picture(data_dict.get("profilePicture", {}))
         self.friend_ship_status = data_dict.get("status", None)
         if self.created_at is not None:
             self.created_at = pendulum.parse(self.created_at)
