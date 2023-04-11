@@ -265,9 +265,13 @@ class BeFake:
         res = self.api_request("get", f"relationships/friends")
         return [User(friend, self) for friend in res["data"]]
 
-    def get_friend_suggestions(self):
-        res = self.api_request("get", f"relationships/suggestions")
-        return [User(suggestion, self) for suggestion in res["data"]]
+    def get_friend_suggestions(self, next=None):
+        if next:
+            res = self.api_request("get", f"relationships/suggestions", params={"page": next})
+        else:
+            res = self.api_request("get", f"relationships/suggestions")
+
+        return [User(suggestion, self) for suggestion in res["data"]], res["next"]
 
     def get_friend_requests(self, req_type: str):
         res = self.api_request("get", f"relationships/friend-requests/{req_type}")
