@@ -283,13 +283,13 @@ class BeFake:
         res = self.api_request("patch", f"relationships/friend-requests/{userId}", data={"status": "cancelled"})
         return User(res, self)
 
-    def get_users_by_phone_number(self, phone_numbers):
+    def get_users_by_phone_numbers(self, phone_numbers):
         hashed_phone_numbers = [
             hashlib.sha256(phone_number.encode("utf-8")).hexdigest()
             for phone_number in phone_numbers
         ]
         res = self.api_request("post",
-                               "/relationships/contacts",
+                               "relationships/contacts",
                                data={
                                    "phoneNumbers": hashed_phone_numbers,
                                },
@@ -297,7 +297,7 @@ class BeFake:
         return [User(user, self) for user in res]
 
     def get_user_by_phone_number(self, phone_number: str):
-        return self.get_users_by_phone_number([phone_number])[0]
+        return self.get_users_by_phone_numbers([phone_number])[0]
 
     def send_capture_in_progress_push(self, topic=None, username=None):
         topic = topic if topic else self.user_id
