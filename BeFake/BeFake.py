@@ -303,7 +303,7 @@ class BeFake:
     def get_user_by_phone_number(self, phone_number: str):
         return self.get_users_by_phone_numbers([phone_number])[0]
 
-    def send_capture_in_progress_push(self, topic=None, username=None):
+    def send_capture_in_progress_push(self, topic=None, username=None): # Outdated?
         topic = topic if topic else self.user_id
         username = username if username else self.get_user_info().username
         res = self.client.post(
@@ -435,7 +435,7 @@ class BeFake:
         return res.json()
 
     # works also for not friends and unpublic post with given post_id
-    def get_reactions(self, post_id):
+    def get_reactions(self, post_id: str):
         payload = {
             "postId": post_id,
         }
@@ -444,10 +444,22 @@ class BeFake:
                                )
         return res
 
-    def search_username(self, username):
+    def search_username(self, username: str):
         res = self.api_request("get", f"search/profile", params={"query": username})
         return [User(user, self) for user in res["data"]]
 
     def get_settings(self):
         res = self.api_request("get", f"settings")
         return res
+
+    def get_terms(self):
+        res = self.api_request("get", f"terms")
+        return res
+
+    def set_terms(self, code: str, choice: bool):
+        if choice:
+            res = self.api_request("put", f"terms/{code}", data={"status": "ACCEPTED"})
+        else:
+            res = self.api_request("put", f"terms/{code}", data={"status": "DECLINED"})
+        return res
+
