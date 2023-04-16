@@ -181,7 +181,7 @@ class BeFake:
         })
         # TODO: better error handling and retries
         if vonageRes.status_code not in [200, 201]:
-            print("Error: " + vonageRes.json()["statusCode"] + vonageRes.json()["message"])
+            print("Error: " + str(vonageRes.json()["statusCode"]) + vonageRes.json()["message"])
             print("Make sure you entered the right code")
         vonageRes = vonageRes.json()
         res = self.client.post("https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyCustomToken",
