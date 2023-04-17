@@ -364,8 +364,8 @@ class BeFake:
             "up": "👍",
             "happy": "😃",
             "surprised": "😲",
-            "laughing": "😍",
-            "heartEyes": "😂"
+            "laughing": "😂",
+            "heartEyes": "😍"
         }
         if emoji_type not in emojis:
             raise ValueError("Not a valid emoji type")
