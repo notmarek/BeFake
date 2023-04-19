@@ -68,7 +68,7 @@ class Post(object):
             taken_at=None
     ):
         if taken_at is None:
-            now = pendulum.now()
+            now = pendulum.now(tz="UTC")
             taken_at = f"{now.to_date_string()}T{now.to_time_string()}Z"
 
         postUpload = PostUpload(primary, secondary, resize)
