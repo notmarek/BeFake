@@ -318,7 +318,7 @@ class BeFake:
     def get_user_by_phone_number(self, phone_number: str):
         return self.get_users_by_phone_numbers([phone_number])[0]
 
-    def send_capture_in_progress_push(self, topic=None, username=None): # Outdated?
+    def send_capture_in_progress_push(self, topic=None, username=None):  # Outdated?
         topic = topic if topic else self.user_id
         username = username if username else self.get_user_info().username
         res = self.client.post(
@@ -478,3 +478,11 @@ class BeFake:
             res = self.api_request("put", f"terms/{code}", data={"status": "DECLINED"})
         return res
 
+    def set_profile_picture(self, picture: bytes):
+        payload = {'upload-file': ('profile-picture.webp', picture, 'image/webp')}
+        res = self.api_request("put", f"person/me/profile-picture", files=payload)
+        return res
+
+    def remove_profile_picture(self):
+        res = self.api_request("delete", f"person/me/profile-picture")
+        return res
