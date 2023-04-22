@@ -1,4 +1,5 @@
 from .picture import Picture
+import pprint
 
 
 class Memory(object):
@@ -14,3 +15,9 @@ class Memory(object):
 
     def __repr__(self) -> str:
         return f"<Memory {self.id}>"
+    
+    def toJson(self) -> str:
+        return self.data_dict
+    
+    def pprint(self) -> None:
+        return pprint.pprint(self.data_dict)

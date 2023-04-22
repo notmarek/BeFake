@@ -373,6 +373,48 @@ def settings(bf):
     r = bf.get_settings()
     print(r)
 
+@cli.command(help="download memories as json")
+@click.argument("filename", type=click.STRING)
+@load_bf
+def memories_json(bf: BeFake, filename):
+    r = bf.get_memories_feed()
+    data = {"data": [f.toJson() for f in r]}
+    with open(filename, "w") as f:
+        json.dump(data, f)
+    print("done")
+
+@cli.command(help="download and save memories images")
+@click.argument("directory", type=click.STRING)
+@load_bf
+def memories_images(bf: BeFake, directory):
+    data = bf.get_memories_feed()
+
+    save_directory = f"{directory}\memories"
+    if not os.path.exists(save_directory):
+        os.makedirs(save_directory)
+    
+    if not os.path.exists(f"{save_directory}\\primary"):
+        os.makedirs(f"{save_directory}\\primary")
+    
+    if not os.path.exists(f"{save_directory}\\secondary"):
+        os.makedirs(f"{save_directory}\\secondary")
+
+    
+    for i, memory in enumerate(data):
+        print(f"downloading {i+1}/{len(data)} in {save_directory}\\<primary/secondary>\\{memory.memory_day}-{memory.id}")
+
+        filename = f"{memory.memory_day}-{memory.id}"
+        pic_primary = memory.primary_photo
+        pic_secondary = memory.secondary_photo
+
+        pic_primary.download(f"{save_directory}\\primary\{filename}-primary", "jpg")
+        pic_secondary.download(f"{save_directory}\\secondary\{filename}-secondary", "jpg")
+
+    dataJson = {"data": [f.toJson() for f in data]}
+    with open(f"{save_directory}\data.json", "w+") as f:
+        json.dump(dataJson, f)
+    
+    print("done")
 
 if __name__ == "__main__":
     cli(obj={})
