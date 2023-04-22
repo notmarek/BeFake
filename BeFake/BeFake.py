@@ -395,7 +395,7 @@ class BeFake:
             "emoji": emojis[emoji_type]
         }
 
-        res = self.api_request("put", "person/me/realmojis", data=data, headers={"authorization": self.token})
+        res = self.api_request("put", "person/me/realmojis", data=data)
         return res
 
     # IT WORKS!!!!

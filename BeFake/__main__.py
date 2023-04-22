@@ -175,7 +175,7 @@ def parse_friends(bf, save_location):
         with open(f"{_save_location}/info.json", "w+") as f:
             json.dump(friend.data_dict, f, indent=4)
 
-        if friend.profile_picture.exists():
+        if friend.profile_picture:
             creation_date = friend.profile_picture.get_date().format(date_format)
             friend.profile_picture.download(f"{_save_location}/{creation_date}_profile_picture")
 
