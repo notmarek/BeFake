@@ -107,7 +107,10 @@ class BeFake:
                 "phoneNumber": phone,
                 "iosReceipt": "AEFDNu9QZBdycrEZ8bM_2-Ei5kn6XNrxHplCLx2HYOoJAWx-uSYzMldf66-gI1vOzqxfuT4uJeMXdreGJP5V1pNen_IKJVED3EdKl0ldUyYJflW5rDVjaQiXpN0Zu2BNc1c",
             },
-        ).json()
+        )
+        if not res.is_success:
+            raise Exception(res.content)
+        res = res.json()
         self.otp_session = res["sessionInfo"]
 
     def get_recaptcha_url(self):
@@ -130,7 +133,10 @@ class BeFake:
         res = self.client.post(
             "https://www.googleapis.com/identitytoolkit/v3/relyingparty/sendVerificationCode",
             params={"key": self.gapi_key},
-            data=payload).json()
+            data=payload)
+        if not res.is_success:
+            raise Exception(res.content)
+        res = res.json()
         self.otp_session = res["sessionInfo"]
 
     def send_otp_vonage(self, phone: str) -> None:
@@ -163,8 +169,10 @@ class BeFake:
                 "code": otp,
                 "operation": "SIGN_UP_OR_IN",
             },
-        ).json()
-
+        )
+        if not res.is_success:
+            raise Exception(res.content)
+        res = res.json()
         self.token = res["idToken"]
         self.token_info = json.loads(b64decode(res["idToken"].split(".")[1] + '=='))
         self.refresh_token = res["refreshToken"]
@@ -179,8 +187,7 @@ class BeFake:
             "code": otp,
             "vonageRequestId": self.otp_session
         })
-        # TODO: better error handling and retries
-        if vonageRes.status_code not in [200, 201]:
+        if not vonageRes.is_success:
             print("Error: " + str(vonageRes.json()["statusCode"]) + vonageRes.json()["message"])
             print("Make sure you entered the right code")
         vonageRes = vonageRes.json()
@@ -188,7 +195,11 @@ class BeFake:
                                params={"key": self.gapi_key}, data={
                 "token": vonageRes["token"],
                 "returnSecureToken": True
-            }).json()
+            })
+        if not res.is_success:
+            raise Exception(res.content)
+
+        res = res.json()
         self.token = res["idToken"]
         self.token_info = json.loads(b64decode(res["idToken"].split(".")[1] + '=='))
         self.refresh_token = res["refreshToken"]
@@ -201,7 +212,12 @@ class BeFake:
             "https://securetoken.googleapis.com/v1/token",
             params={"key": self.gapi_key},
             data={"refresh_token": self.refresh_token, "grant_type": "refresh_token"},
-        ).json()
+        )
+
+        if not res.is_success:
+            raise Exception(res.content)
+
+        res = res.json()
         self.token = res["id_token"]
         self.token_info = json.loads(b64decode(res["id_token"].split(".")[1] + '=='))
         self.refresh_token = res["refresh_token"]
