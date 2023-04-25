@@ -33,10 +33,10 @@ def get_default_session_filename() -> str:
     https://github.com/instaloader/instaloader/blob/3cc29a4/instaloader/instaloader.py#L42-L46"""
 
     if os.environ.get('IS_DOCKER', False):
-        return '/data/token.txt'
+        return '/data/session.json'
 
     config_dir = _get_config_dir()
-    token_filename = f"token.txt"
+    token_filename = f"session.json"
     return os.path.join(config_dir, token_filename)
 
 
@@ -55,7 +55,7 @@ class BeFake:
             verify=not disable_ssl,
             headers={
                 # "user-agent": "AlexisBarreyat.BeReal/0.24.0 iPhone/16.0.2 hw/iPhone12_8 (GTMSUF/1)",
-                "user-agent": "BeReal/0.35.0 (iPhone; iOS 16.0.2; Scale/2.00)",
+                "user-agent": "BeReal/1.0.1 (AlexisBarreyat.BeReal; build:9513; iOS 16.0.2) 1.0.0/BRApriKit",
                 "x-ios-bundle-identifier": "AlexisBarreyat.BeReal",
             },
         )
@@ -70,6 +70,14 @@ class BeFake:
         return f"BeFake(user_id={self.user_id})"
 
     def save(self, file_path: Optional[str] = None) -> None:
+        session = {"access": {"refresh_token": self.refresh_token,
+                              "token": self.token,
+                              "expires": self.expiration.timestamp()},
+                   "firebase": {"refresh_token": self.firebase_refresh_token,
+                                "token": self.firebase_token,
+                                "expires": self.firebase_expiration.timestamp()},
+                    "user_id": self.user_id}
+
         if file_path is None:
             file_path = get_default_session_filename()
         dirname = os.path.dirname(file_path)
@@ -78,21 +86,43 @@ class BeFake:
             os.chmod(dirname, 0o700)
         with open(file_path, "w") as f:
             os.chmod(file_path, 0o600)
-            f.write(self.refresh_token)
+            f.write(json.dumps(session))
 
     def load(self, file_path: Optional[str] = None) -> None:
         if file_path is None:
             file_path = get_default_session_filename()
         with open(file_path, "r") as f:
-            self.refresh_token = str(f.read()).strip()
-            self.refresh_tokens()
+            session = json.load(f)
+            self.user_id = session["user_id"]
+            self.refresh_token = session["access"]["refresh_token"]
+            self.token = session["access"]["token"]
+            self.expiration = pendulum.from_timestamp(session["access"]["expires"])
+            if pendulum.now() >= self.expiration:
+                self.refresh_tokens()
+            self.firebase_refresh_token = session["firebase"]["refresh_token"]
+            self.firebase_token = session["firebase"]["token"]
+            self.firebase_expiration = pendulum.from_timestamp(session["firebase"]["expires"])
+            if pendulum.now() >= self.firebase_expiration:
+                self.firebase_refresh_tokens()
+
+    def legacy_load(self): # DEPRECATED, use this once to convert to new token
+        if os.environ.get('IS_DOCKER', False):
+            file_path = '/data/token.txt'
+
+        config_dir = _get_config_dir()
+        token_filename = f"token.txt"
+        file_path = os.path.join(config_dir, token_filename)
+        with open(file_path, "r") as f:
+            self.firebase_refresh_token = str(f.read()).strip()
+            self.firebase_refresh_tokens()
+            self.grant_access_token()
 
     def api_request(self, method: str, endpoint: str, **kwargs) -> dict:
         assert not endpoint.startswith("/")
         res = self.client.request(
             method,
             f"{self.api_url}/{endpoint}",
-            headers={"authorization": self.token},
+            headers={"authorization": "Bearer " + self.token},
             **kwargs,
         )
         res.raise_for_status()
@@ -161,24 +191,22 @@ class BeFake:
         if self.otp_session is None:
             raise Exception("No open otp session (firebase).")
 
-        res = self.client.post(
+        tokenRes = self.client.post(
             "https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyPhoneNumber",
             params={"key": self.gapi_key},
             data={
                 "sessionInfo": self.otp_session,
                 "code": otp,
-                "operation": "SIGN_UP_OR_IN",
             },
         )
-        if not res.is_success:
-            raise Exception(res.content)
-        res = res.json()
-        self.token = res["idToken"]
-        self.token_info = json.loads(b64decode(res["idToken"].split(".")[1] + '=='))
-        self.refresh_token = res["refreshToken"]
-        self.expiration = pendulum.now().add(seconds=int(res["expiresIn"]))
-        self.user_id = res["localId"]
-        self.phone = res["phoneNumber"]
+        if not tokenRes.is_success:
+            raise Exception(tokenRes.content)
+        tokenRes = tokenRes.json()
+        self.firebase_refresh_token = tokenRes["refreshToken"]
+        self.phone = tokenRes["phoneNumber"]
+        self.firebase_refresh_tokens()
+        self.grant_access_token()
+
 
     def verify_otp_vonage(self, otp: str) -> None:
         if self.otp_session is None:
@@ -191,38 +219,78 @@ class BeFake:
             print("Error: " + str(vonageRes.json()["statusCode"]) + vonageRes.json()["message"])
             print("Make sure you entered the right code")
         vonageRes = vonageRes.json()
-        res = self.client.post("https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyCustomToken",
-                               params={"key": self.gapi_key}, data={
+        idTokenRes = self.client.post("https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyCustomToken",
+                                      params={"key": self.gapi_key}, data={
                 "token": vonageRes["token"],
                 "returnSecureToken": True
             })
-        if not res.is_success:
-            raise Exception(res.content)
+        if not idTokenRes.is_success:
+            raise Exception(idTokenRes.content)
 
-        res = res.json()
-        self.token = res["idToken"]
-        self.token_info = json.loads(b64decode(res["idToken"].split(".")[1] + '=='))
-        self.refresh_token = res["refreshToken"]
-        self.expiration = pendulum.now().add(seconds=int(res["expiresIn"]))
+        idTokenRes = idTokenRes.json()
+
+        self.firebase_refresh_token = idTokenRes["refreshToken"]
+        self.firebase_refresh_tokens()
+        self.grant_access_token()
 
     def refresh_tokens(self) -> None:
         if self.refresh_token is None:
             raise Exception("No refresh token.")
-        res = self.client.post(
-            "https://securetoken.googleapis.com/v1/token",
-            params={"key": self.gapi_key},
-            data={"refresh_token": self.refresh_token, "grant_type": "refresh_token"},
-        )
 
+        res = self.client.post(
+            "https://auth.bereal.team/token",
+            params={"grant_type": "refresh_token"},
+            data={"grant_type": "refresh_token",
+                  "client_id": "ios",
+                  "client_secret": "962D357B-B134-4AB6-8F53-BEA2B7255420",
+                  "refresh_token": self.refresh_token
+                  })
         if not res.is_success:
             raise Exception(res.content)
 
         res = res.json()
-        self.token = res["id_token"]
-        self.token_info = json.loads(b64decode(res["id_token"].split(".")[1] + '=='))
+        self.token = res["access_token"]
+        self.token_info = json.loads(b64decode(res["access_token"].split(".")[1] + '=='))
         self.refresh_token = res["refresh_token"]
         self.expiration = pendulum.now().add(seconds=int(res["expires_in"]))
+
+    def grant_access_token(self) -> None:
+        res = self.client.post("https://auth.bereal.team/token", params={"grant_type": "firebase"}, data={
+            "grant_type": "firebase",
+            "client_id": "ios",
+            "client_secret": "962D357B-B134-4AB6-8F53-BEA2B7255420",
+            "token": self.firebase_token
+        })
+        if not res.is_success:
+            raise Exception(res.content)
+
+        res = res.json()
+
+        self.token = res["access_token"]
+        self.token_info = json.loads(b64decode(res["access_token"].split(".")[1] + '=='))
+        self.refresh_token = res["refresh_token"]
+        self.expiration = pendulum.now().add(seconds=int(res["expires_in"]))
+
+    def firebase_refresh_tokens(self) -> None:
+        res = self.client.post("https://securetoken.googleapis.com/v1/token", params={"key": self.gapi_key},
+                                    data={"grantType": "refresh_token",
+                                          "refreshToken": self.firebase_refresh_token
+                                          })
+        if not res.is_success:
+            raise Exception(res.content)
+        res = res.json()
+        self.firebase_refresh_token = res["refresh_token"]
+        self.firebase_token = res["id_token"]
+        self.firebase_expiration = pendulum.now().add(seconds=int(res["expires_in"]))
         self.user_id = res["user_id"]
+
+    def get_account_info(self):
+        res = self.client.post("https://www.googleapis.com/identitytoolkit/v3/relyingparty/getAccountInfo",
+                               params={"key": self.gapi_key}, data={"idToken": self.firebase_token})
+        if not res.is_success:
+            raise Exception(res.content)
+
+        self.user_id = res["users"][0]["localId"]
 
     def get_user_info(self):
         res = self.api_request("get", "person/me")
