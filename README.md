@@ -7,6 +7,9 @@ A cool tool for collecting all your friends photos from BeReal (including RealMo
 
 A near total coverage of BeReals mobile API is planned and nearly done, except a few things.
 
+## API Update
+Due to recent changes in both BeFake and BeReal API, running ```befake legacy-token``` or a relogin is required.
+
 ## Install
 ```bash
 pip install git+https://github.com/notmarek/BeFake
@@ -16,6 +19,7 @@ pip install git+https://github.com/notmarek/BeFake
 ```bash
 befake [OPTIONS] COMMAND [ARGS]...
 ```
+
 
 ## Docker
 ```bash
