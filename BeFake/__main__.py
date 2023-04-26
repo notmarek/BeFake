@@ -73,6 +73,13 @@ def login(phone_number, deviceid, backend):
     print("You can now try to use the other commands ;)")
 
 
+@cli.command(help="Get a new access_token from your old token.txt config file")
+def legacy_token():
+    bf = BeFake()
+    bf.legacy_load()
+    bf.save()
+    print("Successful token import, you can now use the other commands!")
+
 @cli.command(help="Get info about your account")
 @load_bf
 def me(bf):
