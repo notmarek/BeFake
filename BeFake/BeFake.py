@@ -181,11 +181,12 @@ class BeFake:
                 "user-agent": "BeReal/8586 CFNetwork/1240.0.4 Darwin/20.6.0",
             },
             data=data)
+        if not vonageRes.is_success:
+            raise Exception(vonageRes.content)
         if vonageRes.json()["status"] != '0':
             print("WARNING: " + vonageRes.json()["errorText"])
-            print("If you already received a code before, ignore the warning and enter it.")
-        if vonageRes.status_code == 200:
-            self.otp_session = vonageRes.json()["vonageRequestId"]
+            print("If you already received a code before, ignore the warning and enter it.")    
+        self.otp_session = vonageRes.json()["vonageRequestId"]
 
     def verify_otp_firebase(self, otp: str) -> None:
         if self.otp_session is None:
