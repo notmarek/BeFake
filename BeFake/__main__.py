@@ -51,26 +51,26 @@ def login(phone_number, deviceid, backend):
         otp = input("Enter otp: ")
         bf.verify_otp_vonage(otp)
         bf.save()
-        print("Vonage login successful.")
+        click.echo("Vonage login successful.")
     elif backend == "firebase":
         bf.send_otp_firebase(phone_number)
         otp = input("Enter otp: ")
         bf.verify_otp_firebase(otp)
         bf.save()
-        print("Firebase login successful.")
+        click.echo("Firebase login successful.")
     elif backend == "recaptcha":
-        print("Follow the instructions at https://github.com/notmarek/BeFake/wiki/reCAPTCHA for your operating system.")
-        print("\n\nOpen the following URL:")
-        print(bf.get_recaptcha_url())
-        print()
+        click.echo("Follow the instructions at https://github.com/notmarek/BeFake/wiki/reCAPTCHA for your operating system.")
+        click.echo("\n\nOpen the following URL:")
+        click.echo(bf.get_recaptcha_url())
+        click.echo()
         recaptcha_token = input("Enter reCAPTCHA token: ")
         bf.send_otp_recaptcha(recaptcha_token, phone_number)
         otp = input("Enter otp: ")
         bf.verify_otp_firebase(otp)
         bf.save()
-        print("Firebase reCAPTCHA login successful.")
+        click.echo("Firebase reCAPTCHA login successful.")
 
-    print("You can now try to use the other commands ;)")
+    click.echo("You can now try to use the other commands ;)")
 
 
 @cli.command(help="Get a new access_token from your old token.txt config file")
@@ -78,21 +78,21 @@ def legacy_token():
     bf = BeFake()
     bf.legacy_load()
     bf.save()
-    print("Successful token import, you can now use the other commands!")
+    click.echo("Successful token import, you can now use the other commands!")
 
 @cli.command(help="Get info about your account")
 @load_bf
 def me(bf):
     user = bf.get_user_info()
-    print(user)
-    print(user.__dict__)
+    click.echo(user)
+    click.echo(user.__dict__)
 
 
 @cli.command(help="Refresh token")
 @load_bf
 def refresh(bf):
     bf.refresh_tokens()
-    print(bf.token, end='', flush=True)
+    click.echo(bf.token, end='', flush=True)
     bf.save()
 
 
@@ -131,10 +131,10 @@ def feed(bf, feed_id, save_location, realmoji_location, instant_realmoji_locatio
 
     for item in feed:
         if feed_id == "memories":
-            print("saving memory", item.memory_day)
+            click.echo("saving memory", item.memory_day)
             _save_location = save_location.format(date=item.memory_day)
         else:
-            print(f"saving post by {item.user.username}".ljust(50, " "), f"{item.id}")
+            click.echo(f"saving post by {item.user.username}".ljust(50, " "), f"{item.id}")
             post_date = item.creation_date.format(date_format)
             _save_location = save_location.format(user=item.user.username, date=post_date, feed_id=feed_id,
                                                   post_id=item.id)
@@ -210,7 +210,7 @@ def post(bf, visibility, caption, location, retakes, primary_path, secondary_pat
         secondary_bytes = f.read()
     r = Post.create_post(bf, primary=primary_bytes, secondary=secondary_bytes, is_late=False, visibility=visibility,
                          caption=caption, location=loc, retakes=retakes, resize=resize)
-    print(r)
+    click.echo(r)
 
 
 @cli.command(help="View an invidual post")
@@ -227,7 +227,7 @@ def get_post(bf, feed_id, post_id):
 
     for post in feed:
         if post.id == post_id:
-            print(post.__dict__)
+            click.echo(post.__dict__)
 
 
 @cli.command(help="Upload random photoes to BeReal Servers")
@@ -237,7 +237,7 @@ def upload(bf, filename):
     with open(f"data/photos/{filename}", "rb") as f:
         data = f.read()
     r = bf.upload(data)
-    print(f"Your file is now uploaded to:\n\t{r}")
+    click.echo(f"Your file is now uploaded to:\n\t{r}")
 
 
 @cli.command(help="Add a comment to a post")
@@ -246,7 +246,7 @@ def upload(bf, filename):
 @load_bf
 def comment(bf, post_id, content):
     r = bf.add_comment(post_id, content)
-    print(r)
+    click.echo(r)
 
 
 @cli.command(help="Delete a given comment")
@@ -255,7 +255,7 @@ def comment(bf, post_id, content):
 @load_bf
 def remove_comment(bf, post_id, comment_id):
     r = bf.delete_comment(post_id, comment_id)
-    print(r)
+    click.echo(r)
 
 
 @cli.command(help="Pretend to screenshot a post")
@@ -263,14 +263,14 @@ def remove_comment(bf, post_id, comment_id):
 @load_bf
 def screenshot(bf, post_id):
     r = bf.take_screenshot(post_id)
-    print(r)
+    click.echo(r)
 
 
 @cli.command(help="Delete your post")
 @load_bf
 def delete_post(bf):
     r = bf.delete_post()
-    print(r)
+    click.echo(r)
 
 
 @cli.command(help="Change the caption of your post")
@@ -278,7 +278,7 @@ def delete_post(bf):
 @load_bf
 def change_caption(bf, caption):
     r = bf.change_caption(caption)
-    print(r)
+    click.echo(r)
 
 
 @cli.command(help="Gets information about a user profile")
@@ -286,8 +286,8 @@ def change_caption(bf, caption):
 @load_bf
 def get_user_profile(bf, user_id):
     r = bf.get_user_profile(user_id)
-    print(r)
-    print(r.__dict__)
+    click.echo(r)
+    click.echo(r.__dict__)
 
 
 @cli.command(help="Sends a notification to your friends, saying you're taking a bereal")
@@ -296,7 +296,7 @@ def get_user_profile(bf, user_id):
 @load_bf
 def send_push_notification(bf, user_id, username):
     r = bf.send_capture_in_progress_push(topic=user_id if user_id else None, username=username if username else None)
-    print(r)
+    click.echo(r)
 
 
 @cli.command(help="post an instant realmoji")
@@ -310,7 +310,7 @@ def instant_realmoji(bf, post_id, user_id, filename):
     with open(f"data/photos/{filename}", "rb") as f:
         data = f.read()
     r = bf.post_instant_realmoji(post_id, user_id, data)
-    print(r)
+    click.echo(r)
 
 
 @cli.command(help="Upload an emoji-specific realmoji")
@@ -323,7 +323,7 @@ def upload_realmoji(bf, type, filename):
     with open(f"data/photos/{filename}", "rb") as f:
         data = f.read()
     r = bf.upload_realmoji(data, emoji_type=type)
-    print(r)
+    click.echo(r)
 
 
 # currently broken, gives internal server error
@@ -336,7 +336,7 @@ def emoji_realmoji(bf, post_id, user_id, type):
     type = str(type)
     # we don't have any method to know which realmojis (mapped to a type) the user already uploaded, we think, the client just stores the urls to uploaded realmojis and sends them...
     r2 = bf.post_realmoji(post_id, user_id, emoji_type=type)
-    print(r2)
+    click.echo(r2)
 
 
 @cli.command(help="Search for a given username.")
@@ -344,7 +344,7 @@ def emoji_realmoji(bf, post_id, user_id, type):
 @load_bf
 def search_user(bf, username):
     r = bf.search_username(username)
-    print(r)
+    click.echo(r)
 
 
 # TODO: there's probably a better way of doing this, for instance having friend-request <add|view|cancel>.
@@ -353,7 +353,7 @@ def search_user(bf, username):
 @load_bf
 def friend_requests(bf, operation):
     r = bf.get_friend_requests(operation)
-    print(r)
+    click.echo(r)
 
 
 @cli.command(help="Send friend request")
@@ -363,7 +363,7 @@ def friend_requests(bf, operation):
 @load_bf
 def new_friend_request(bf, user_id, source):
     r = bf.add_friend(user_id, source)
-    print(r)
+    click.echo(r)
 
 
 @cli.command(help="Cancel friend request")
@@ -371,14 +371,14 @@ def new_friend_request(bf, user_id, source):
 @load_bf
 def cancel_friend_request(bf, user_id):
     r = bf.remove_friend_request(user_id)
-    print(r)
+    click.echo(r)
 
 
 @cli.command(help="get settings")
 @load_bf
 def settings(bf):
     r = bf.get_settings()
-    print(r)
+    click.echo(r)
 
 
 if __name__ == "__main__":
