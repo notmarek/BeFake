@@ -131,7 +131,7 @@ def feed(bf, feed_id, save_location, realmoji_location, instant_realmoji_locatio
 
     for item in feed:
         if feed_id == "memories":
-            click.echo(f"saving memory {}".format(item.memory_day))
+            click.echo("saving memory {}".format(item.memory_day))
             _save_location = save_location.format(date=item.memory_day)
         else:
             click.echo(f"saving post by {item.user.username}".ljust(50, " ") + item.id)
