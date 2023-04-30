@@ -92,7 +92,7 @@ def me(bf):
 @load_bf
 def refresh(bf):
     bf.refresh_tokens()
-    click.echo(bf.token, end='', flush=True)
+    click.echo(bf.token, nl=False)
     bf.save()
 
 
@@ -131,10 +131,10 @@ def feed(bf, feed_id, save_location, realmoji_location, instant_realmoji_locatio
 
     for item in feed:
         if feed_id == "memories":
-            click.echo("saving memory", item.memory_day)
+            click.echo("saving memory {}".format(item.memory_day))
             _save_location = save_location.format(date=item.memory_day)
         else:
-            click.echo(f"saving post by {item.user.username}".ljust(50, " "), f"{item.id}")
+            click.echo(f"saving post by {item.user.username}".ljust(50, " ") + item.id)
             post_date = item.creation_date.format(date_format)
             _save_location = save_location.format(user=item.user.username, date=post_date, feed_id=feed_id,
                                                   post_id=item.id)
