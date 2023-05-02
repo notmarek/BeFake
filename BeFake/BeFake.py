@@ -102,7 +102,7 @@ class BeFake:
             self.firebase_refresh_token = session["firebase"]["refresh_token"]
             self.firebase_token = session["firebase"]["token"]
             self.firebase_expiration = pendulum.from_timestamp(session["firebase"]["expires"])
-            if pendulum.now() >= self.firebase_expiration:
+            if pendulum.now().add(minutes=3) >= self.firebase_expiration:
                 self.firebase_refresh_tokens()
 
     def legacy_load(self): # DEPRECATED, use this once to convert to new token
@@ -254,6 +254,7 @@ class BeFake:
         self.token_info = json.loads(b64decode(res["access_token"].split(".")[1] + '=='))
         self.refresh_token = res["refresh_token"]
         self.expiration = pendulum.now().add(seconds=int(res["expires_in"]))
+        self.save()
 
     def grant_access_token(self) -> None:
         res = self.client.post("https://auth.bereal.team/token", params={"grant_type": "firebase"}, data={
