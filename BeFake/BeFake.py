@@ -254,6 +254,7 @@ class BeFake:
         self.token_info = json.loads(b64decode(res["access_token"].split(".")[1] + '=='))
         self.refresh_token = res["refresh_token"]
         self.expiration = pendulum.now().add(seconds=int(res["expires_in"]))
+        self.save()
 
     def grant_access_token(self) -> None:
         res = self.client.post("https://auth.bereal.team/token", params={"grant_type": "firebase"}, data={
