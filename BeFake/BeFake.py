@@ -102,7 +102,7 @@ class BeFake:
             self.firebase_refresh_token = session["firebase"]["refresh_token"]
             self.firebase_token = session["firebase"]["token"]
             self.firebase_expiration = pendulum.from_timestamp(session["firebase"]["expires"])
-            if pendulum.now() >= self.firebase_expiration:
+            if pendulum.now().add(minutes=3) >= self.firebase_expiration:
                 self.firebase_refresh_tokens()
 
     def legacy_load(self): # DEPRECATED, use this once to convert to new token
