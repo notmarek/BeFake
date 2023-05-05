@@ -9,7 +9,10 @@ import random
 from .BeFake import BeFake
 from .models.post import Post, Location
 
-import click
+try:
+    import rich_click as click
+except ImportError:
+    import click
 
 DATA_DIR = "data"
 
