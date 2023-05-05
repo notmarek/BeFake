@@ -8,6 +8,8 @@ import pendulum
 import hashlib
 import platform
 import os
+
+from .models.post_v1 import PostsV1
 from .models.realmoji_picture import RealmojiPicture
 
 from .models.post import Post, FOFPost
@@ -58,6 +60,7 @@ class BeFake:
                 "user-agent": "BeReal/1.0.1 (AlexisBarreyat.BeReal; build:9513; iOS 16.0.2) 1.0.0/BRApriKit",
                 "x-ios-bundle-identifier": "AlexisBarreyat.BeReal",
             },
+            timeout=15
         )
         self.gapi_key = google_api_key
         self.api_url = api_url
@@ -93,17 +96,17 @@ class BeFake:
             file_path = get_default_session_filename()
         with open(file_path, "r") as f:
             session = json.load(f)
-            self.user_id = session["user_id"]
-            self.refresh_token = session["access"]["refresh_token"]
-            self.token = session["access"]["token"]
-            self.expiration = pendulum.from_timestamp(session["access"]["expires"])
-            if pendulum.now() >= self.expiration:
-                self.refresh_tokens()
             self.firebase_refresh_token = session["firebase"]["refresh_token"]
             self.firebase_token = session["firebase"]["token"]
             self.firebase_expiration = pendulum.from_timestamp(session["firebase"]["expires"])
             if pendulum.now().add(minutes=3) >= self.firebase_expiration:
                 self.firebase_refresh_tokens()
+            self.user_id = session["user_id"]
+            self.refresh_token = session["access"]["refresh_token"]
+            self.token = session["access"]["token"]
+            self.expiration = pendulum.from_timestamp(session["access"]["expires"])
+            if pendulum.now().add(minutes=3) >= self.expiration:
+                self.refresh_tokens()
 
     def legacy_load(self): # DEPRECATED, use this once to convert to new token
         if os.environ.get('IS_DOCKER', False):
@@ -163,7 +166,7 @@ class BeFake:
         res = self.client.post(
             "https://www.googleapis.com/identitytoolkit/v3/relyingparty/sendVerificationCode",
             params={"key": self.gapi_key},
-            data=payload)
+            json=payload)
         if not res.is_success:
             raise Exception(res.content)
         res = res.json()
@@ -212,7 +215,7 @@ class BeFake:
     def verify_otp_vonage(self, otp: str) -> None:
         if self.otp_session is None:
             raise Exception("No open otp session (vonage).")
-        vonageRes = self.client.post("https://auth.bereal.team/api/vonage/check-code", data={
+        vonageRes = self.client.post("https://auth.bereal.team/api/vonage/check-code", json={
             "code": otp,
             "vonageRequestId": self.otp_session
         })
@@ -221,7 +224,7 @@ class BeFake:
             print("Make sure you entered the right code")
         vonageRes = vonageRes.json()
         idTokenRes = self.client.post("https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyCustomToken",
-                                      params={"key": self.gapi_key}, data={
+                                      params={"key": self.gapi_key}, json={
                 "token": vonageRes["token"],
                 "returnSecureToken": True
             })
@@ -241,7 +244,7 @@ class BeFake:
         res = self.client.post(
             "https://auth.bereal.team/token",
             params={"grant_type": "refresh_token"},
-            data={"grant_type": "refresh_token",
+            json={"grant_type": "refresh_token",
                   "client_id": "ios",
                   "client_secret": "962D357B-B134-4AB6-8F53-BEA2B7255420",
                   "refresh_token": self.refresh_token
@@ -257,7 +260,7 @@ class BeFake:
         self.save()
 
     def grant_access_token(self) -> None:
-        res = self.client.post("https://auth.bereal.team/token", params={"grant_type": "firebase"}, data={
+        res = self.client.post("https://auth.bereal.team/token", params={"grant_type": "firebase"}, json={
             "grant_type": "firebase",
             "client_id": "ios",
             "client_secret": "962D357B-B134-4AB6-8F53-BEA2B7255420",
@@ -307,6 +310,16 @@ class BeFake:
     def get_friends_feed(self):
         res = self.api_request("get", "feeds/friends")
         return [Post(p, self) for p in res]
+
+    def get_friendsv1_feed(self):
+        res = self.api_request("get", "feeds/friends-v1")
+        user = []
+        friends = []
+        if res["userPosts"]:
+            user = [PostsV1(res["userPosts"], self)]
+        if res["friendsPosts"]:
+            friends = [PostsV1(posts, self) for posts in res["friendsPosts"]]
+        return user + friends
 
     def get_fof_feed(self):  # friends of friends feed
         res = self.api_request("get", "feeds/friends-of-friends")

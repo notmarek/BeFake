@@ -30,3 +30,16 @@ class RealMoji(object):
         if not hasattr(self, 'creation_date'):
             self.creation_date = self.photo.get_date()
         return self.creation_date
+
+
+class RealMojiV1(RealMoji):
+    def __init__(self, data_dict, befake):
+        self.bf = befake
+        self.id = data_dict.get("id", None)
+        self.user = User(data_dict.get("user", {}), befake)
+        self.uid = self.user.id
+        self.username = self.user.username
+        self.emoji = data_dict.get("emoji", None)
+        self.type = data_dict.get("type", None)
+        self.photo = Picture(data_dict.get("media"))
+        self.date = pendulum.parse(data_dict.get("postedAt", None))

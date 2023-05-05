@@ -97,7 +97,7 @@ def refresh(bf):
 
 
 @cli.command(help="Download a feed")
-@click.argument("feed_id", type=click.Choice(["friends", "friends-of-friends", "discovery", "memories"]))
+@click.argument("feed_id", type=click.Choice(["friends", "friends-v1", "friends-of-friends", "discovery", "memories"]))
 @click.option("--save-location", help="The paths where the posts should be downloaded")
 @click.option("--realmoji-location", help="The paths where the (non-instant) realmojis should be downloaded")
 @click.option("--instant-realmoji-location", help="The paths where the instant realmojis should be downloaded")
@@ -113,19 +113,23 @@ def feed(bf, feed_id, save_location, realmoji_location, instant_realmoji_locatio
         feed = bf.get_discovery_feed()
     elif feed_id == "memories":
         feed = bf.get_memories_feed()
+    elif feed_id == "friends-v1":
+        feed = bf.get_friendsv1_feed()
 
     # Add fallback location for save_location and realmoji_location parameters if they were not specified by the user.
     # These strings will get formatted later, that's why the "f" is missing before the strings.
     if save_location is None:
         if feed_id == "memories":
             save_location = f"{DATA_DIR}" + "/feeds/memories/{date}"
+        elif feed_id == "friends-v1":
+            save_location = f"{DATA_DIR}" + "/feeds/{feed_id}/{user}/{notification_id}/{post_id}"
         else:
             save_location = f"{DATA_DIR}" + "/feeds/{feed_id}/{user}/{post_id}"
 
     if realmoji_location is None:
         realmoji_location = \
             f"{DATA_DIR}" + \
-            "/feeds/{feed_id}/{post_user}/{post_id}/reactions/{type}/{user}"
+            "/feeds/{feed_id}/{user}/{notification_id}/{post_id}/reactions/{type}/{user}"
 
     instant_realmoji_location = realmoji_location if instant_realmoji_location is None else instant_realmoji_location
 
@@ -133,37 +137,71 @@ def feed(bf, feed_id, save_location, realmoji_location, instant_realmoji_locatio
         if feed_id == "memories":
             click.echo("saving memory {}".format(item.memory_day))
             _save_location = save_location.format(date=item.memory_day)
+            os.makedirs(f"{_save_location}", exist_ok=True)
+
+            with open(f"{_save_location}/info.json", "w+") as f:
+                f.write(json.dumps(item.data_dict, indent=4))
+            item.primary_photo.download(f"{_save_location}/primary")
+            item.secondary_photo.download(f"{_save_location}/secondary")
+
+        elif feed_id == "friends-v1":
+            for post in item.posts:
+                click.echo(f"saving posts by {item.user.username}".ljust(50, " ") + post.id)
+                post_date = post.creation_date.format(date_format)
+                _save_location = save_location.format(user=item.user.username, date=post_date, feed_id=feed_id,
+                                                  post_id=post.id, notification_id=item.notification_id)
+                os.makedirs(f"{_save_location}", exist_ok=True)
+
+                with open(f"{_save_location}/info.json", "w+") as f:
+                    f.write(json.dumps(post.data_dict, indent=4))
+                post.primary_photo.download(f"{_save_location}/primary")
+                post.secondary_photo.download(f"{_save_location}/secondary")
+                for emoji in post.realmojis:
+                    # Differenciate between instant and non-instant realomji locations
+                    _realmoji_location = instant_realmoji_location if emoji.type == 'instant' else realmoji_location
+
+                    # Format realmoji location
+                    _realmoji_location = _realmoji_location.format(user=emoji.username, type=emoji.type,
+                                                                   feed_id=feed_id, notification_id=item.notification_id,
+                                                                   post_date=post_date, post_user=item.user.username,
+                                                                   post_id=post.id, date='{date}')
+
+                    # Getting the realmoji creation date sends an extra request
+                    # Only use that if it's actually needed
+                    if '{date}' in _realmoji_location:
+                        _realmoji_location = _realmoji_location.format(
+                            date=emoji.get_creation_date().format(date_format))
+
+                    os.makedirs(os.path.dirname(_realmoji_location), exist_ok=True)
+                    emoji.photo.download(f"{_realmoji_location}")
+
         else:
             click.echo(f"saving post by {item.user.username}".ljust(50, " ") + item.id)
             post_date = item.creation_date.format(date_format)
             _save_location = save_location.format(user=item.user.username, date=post_date, feed_id=feed_id,
                                                   post_id=item.id)
+            os.makedirs(f"{_save_location}", exist_ok=True)
 
-        os.makedirs(f"{_save_location}", exist_ok=True)
+            with open(f"{_save_location}/info.json", "w+") as f:
+                f.write(json.dumps(item.data_dict, indent=4))
+            item.primary_photo.download(f"{_save_location}/primary")
+            item.secondary_photo.download(f"{_save_location}/secondary")
+            for emoji in item.realmojis:
+                # Differenciate between instant and non-instant realomji locations
+                _realmoji_location = instant_realmoji_location if emoji.type == 'instant' else realmoji_location
 
-        with open(f"{_save_location}/info.json", "w+") as f:
-            f.write(json.dumps(item.data_dict, indent=4))
-        item.primary_photo.download(f"{_save_location}/primary")
-        item.secondary_photo.download(f"{_save_location}/secondary")
+                # Format realmoji location
+                _realmoji_location = _realmoji_location.format(user=emoji.username, type=emoji.type, feed_id=feed_id,
+                                                               post_date=post_date, post_user=item.username,
+                                                               post_id=item.id, date='{date}')
 
-        if feed_id == "memories":
-            continue
-        for emoji in item.realmojis:
-            # Differenciate between instant and non-instant realomji locations
-            _realmoji_location = instant_realmoji_location if emoji.type == 'instant' else realmoji_location
+                # Getting the realmoji creation date sends an extra request
+                # Only use that if it's actually needed
+                if '{date}' in _realmoji_location:
+                    _realmoji_location = _realmoji_location.format(date=emoji.get_creation_date().format(date_format))
 
-            # Format realmoji location
-            _realmoji_location = _realmoji_location.format(user=emoji.username, type=emoji.type, feed_id=feed_id,
-                                                           post_date=post_date, post_user=item.username,
-                                                           post_id=item.id, date='{date}')
-
-            # Getting the realmoji creation date sends an extra request
-            # Only use that if it's actually needed
-            if '{date}' in _realmoji_location:
-                _realmoji_location = _realmoji_location.format(date=emoji.get_creation_date().format(date_format))
-
-            os.makedirs(os.path.dirname(_realmoji_location), exist_ok=True)
-            emoji.photo.download(f"{_realmoji_location}")
+                os.makedirs(os.path.dirname(_realmoji_location), exist_ok=True)
+                emoji.photo.download(f"{_realmoji_location}")
 
 
 @cli.command(help="Download friends information")
