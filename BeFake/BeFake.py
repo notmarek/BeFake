@@ -96,17 +96,20 @@ class BeFake:
             file_path = get_default_session_filename()
         with open(file_path, "r") as f:
             session = json.load(f)
-            self.firebase_refresh_token = session["firebase"]["refresh_token"]
-            self.firebase_token = session["firebase"]["token"]
-            self.firebase_expiration = pendulum.from_timestamp(session["firebase"]["expires"])
-            if pendulum.now().add(minutes=3) >= self.firebase_expiration:
-                self.firebase_refresh_tokens()
             self.user_id = session["user_id"]
             self.refresh_token = session["access"]["refresh_token"]
             self.token = session["access"]["token"]
             self.expiration = pendulum.from_timestamp(session["access"]["expires"])
+
+            self.firebase_refresh_token = session["firebase"]["refresh_token"]
+            self.firebase_token = session["firebase"]["token"]
+            self.firebase_expiration = pendulum.from_timestamp(session["firebase"]["expires"])
+
             if pendulum.now().add(minutes=3) >= self.expiration:
                 self.refresh_tokens()
+
+            if pendulum.now().add(minutes=3) >= self.firebase_expiration:
+                self.firebase_refresh_tokens()
 
     def legacy_load(self): # DEPRECATED, use this once to convert to new token
         if os.environ.get('IS_DOCKER', False):
@@ -288,6 +291,7 @@ class BeFake:
         self.firebase_token = res["id_token"]
         self.firebase_expiration = pendulum.now().add(seconds=int(res["expires_in"]))
         self.user_id = res["user_id"]
+        self.save()
 
     def get_account_info(self):
         res = self.client.post("https://www.googleapis.com/identitytoolkit/v3/relyingparty/getAccountInfo",
