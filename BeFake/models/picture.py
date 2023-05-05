@@ -41,7 +41,10 @@ class Picture(object):
         if path and os.path.exists(f"{path}.{file_ext}"):
             return
 
-        r = httpx.get(self.url)
+        r = httpx.get(self.url, headers={
+            "user-agent": "BeReal/1.0.1 (AlexisBarreyat.BeReal; build:9513; iOS 16.0.2) 1.0.0/BRApriKit",
+            "x-ios-bundle-identifier": "AlexisBarreyat.BeReal"})
+
         self.data = r.content
 
         if path:
