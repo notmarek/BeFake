@@ -94,9 +94,12 @@ def me(bf):
 @cli.command(help="Refresh token")
 @load_bf
 def refresh(bf):
+    # If the token has expired, bf.refresh_tokens() will also get called by @load_bf.
+    # In that scenario, a double refresh will be done.
+    # Since this command is mostly used for debugging, it wouldn't be practical to add extra code to prevent this
+    # behaviour.
     bf.refresh_tokens()
     click.echo(bf.token, nl=False)
-    bf.save()
 
 
 @cli.command(help="Download a feed")
