@@ -25,10 +25,7 @@ def load_bf(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         bf = BeFake()
-        try:
-            bf.load()
-        except:
-            raise Exception("No token found, are you logged in?")
+        bf.load()
         return func(bf, *args, **kwargs)
 
     return wrapper
