@@ -136,11 +136,11 @@ def feed(bf, feed_id, save_location, realmoji_location, instant_realmoji_locatio
         if feed_id == "friends-v1":
             realmoji_location = \
                 f"{DATA_DIR}" + \
-                "/feeds/{feed_id}/{user}/{notification_id}/{post_id}/reactions/{type}/{user}"
+                "/feeds/{feed_id}/{post_user}/{notification_id}/{post_id}/reactions/{type}/{user}"
         else:
             realmoji_location = \
                 f"{DATA_DIR}" + \
-                "/feeds/{feed_id}/{user}/{post_id}/reactions/{type}/{user}"
+                "/feeds/{feed_id}/{post_user}/{post_id}/reactions/{type}/{user}"
 
     instant_realmoji_location = realmoji_location if instant_realmoji_location is None else instant_realmoji_location
 
