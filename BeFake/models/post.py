@@ -97,7 +97,7 @@ class Post(object):
         if location is not None: # when gps coordinates have been specified
             json_data["location"] = {"latitude": location.lat, "longitude": location.lon}
 
-        res = self.client.post(f"{self.api_url}/content/posts", json=json_data, headers={"authorization": self.token})
+        res = self.client.post(f"{self.api_url}/content/posts", json=json_data, headers={"authorization": "Bearer " + self.token})
         if res.status_code not in (200, 201):
             raise Exception(f"Error making the post: {res.status_code}")
 
