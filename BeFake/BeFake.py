@@ -194,6 +194,26 @@ class BeFake:
             print("If you already received a code before, ignore the warning and enter it.")    
         self.otp_session = vonageRes.json()["vonageRequestId"]
 
+    def send_otp_cloud(self, phone: str) -> None:
+        self.phone = phone
+        # Request can only accept plain text JSON=> string
+        data = json.dumps({
+            "phoneNumber": phone,
+        })
+        apiUrl = "https://us-central1-befake-623af.cloudfunctions.net/login"
+        cloudRes = self.client.post(
+            apiUrl,
+            headers={
+                "content-Type": "application/text",
+            },
+            data=data
+        )
+        if not cloudRes.is_success:
+            raise Exception(cloudRes.content)
+        if cloudRes.status_code == 200:
+            responseToJson = json.loads(cloudRes.content)
+            self.otp_session = responseToJson["sessionInfo"]
+
     def verify_otp_firebase(self, otp: str) -> None:
         if self.otp_session is None:
             raise Exception("No open otp session (firebase).")
