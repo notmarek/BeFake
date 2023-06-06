@@ -270,7 +270,7 @@ class BeFake:
             "sessionInfo": self.otp_session,
             "operation": "SIGN_UP_OR_IN"
         })
-        apiUrl = "https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyPhoneNumber?key=AIzaSyDwjfEeparokD7sXPVQli9NsTuhT6fJ6iA"
+        apiUrl = f"https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyPhoneNumber?key=" + self.gapi_key
         VerificationRes = self.client.post(
             apiUrl,
             headers={
