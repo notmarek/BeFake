@@ -340,7 +340,7 @@ class BeFake:
         self.firebase_expiration = pendulum.now().add(
             seconds=int(res["expires_in"]))
         self.user_id = res["user_id"]
-        self.save()
+        #self.save() #Cant save here because we dont have the user_id yet
 
     def get_account_info(self):
         res = self.client.post("https://www.googleapis.com/identitytoolkit/v3/relyingparty/getAccountInfo",
