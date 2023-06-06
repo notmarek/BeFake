@@ -281,7 +281,6 @@ class BeFake:
         if not VerificationRes.is_success:
             raise Exception(VerificationRes.content)
         VerificationRes = VerificationRes.json()
-        print(VerificationRes)
         self.firebase_refresh_token = VerificationRes["refreshToken"]
         self.firebase_refresh_tokens()
         self.grant_access_token()
