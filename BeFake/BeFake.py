@@ -263,6 +263,29 @@ class BeFake:
         self.firebase_refresh_tokens()
         self.grant_access_token()
 
+    def verify_otp_cloud(self, otp: str) -> None:
+        # Request can only accept plain text JSON=> string
+        data = json.dumps({
+            "code": otp,
+            "sessionInfo": self.otp_session,
+            "operation": "SIGN_UP_OR_IN"
+        })
+        apiUrl = "https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyPhoneNumber?key=AIzaSyDwjfEeparokD7sXPVQli9NsTuhT6fJ6iA"
+        VerificationRes = self.client.post(
+            apiUrl,
+            headers={
+                "content-Type": "application/json",
+            },
+            data=data
+        )
+        if not VerificationRes.is_success:
+            raise Exception(VerificationRes.content)
+        VerificationRes = VerificationRes.json()
+        print(VerificationRes)
+        self.firebase_refresh_token = VerificationRes["refreshToken"]
+        self.firebase_refresh_tokens()
+        self.grant_access_token()
+
     def refresh_tokens(self) -> None:
         if self.refresh_token is None:
             raise Exception("No refresh token.")
