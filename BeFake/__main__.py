@@ -45,11 +45,17 @@ def cli(ctx):
 @cli.command(help="Login to BeReal")
 @click.argument("phone_number", type=str)
 @click.argument("deviceid", type=str, default=''.join(random.choices(string.ascii_lowercase + string.digits, k=16)))
-@click.option("backend", "--backend", "-b", type=click.Choice(["vonage", "firebase", "recaptcha"]), default="vonage",
+@click.option("backend", "--backend", "-b", type=click.Choice(["vonage", "firebase", "recaptcha", "cloud"]), default="cloud",
               show_default=True)
 def login(phone_number, deviceid, backend):
     bf = BeFake(deviceId=deviceid)
-    if backend == "vonage":
+    if backend == "cloud":
+        bf.send_otp_cloud(phone_number)
+        otp = input("Enter otp: ")
+        bf.verify_otp_cloud(otp)
+        bf.save()
+        click.echo("Cloud login successful.")
+    elif backend == "vonage":
         bf.send_otp_vonage(phone_number)
         otp = input("Enter otp: ")
         bf.verify_otp_vonage(otp)
