@@ -199,30 +199,53 @@ class BeFake:
 
     def send_otp_cloud(self, phone: str) -> None:
         self.phone = phone
-        # Request can only accept plain text JSON=> string
-        data = json.dumps({
-            "phoneNumber": phone,
-        })
-        apiUrl = "https://us-central1-befake-623af.cloudfunctions.net/login"
-        cloudRes = self.client.post(
-            apiUrl,
-            headers={
-                "content-Type": "application/text",
-            },
-            data=data
+        # First request to get receip token
+        firstData = json.dumps(
+            {"appToken": "54F80A258C35A916B38A3AD83CA5DDD48A44BFE2461F90831E0F97EBA4BB2EC7"})
+        firstRes = self.client.post(
+            "https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyClient?key=" + self.gapi_key,
+            data=firstData,
+            headers={"content-type": "application/json",
+                     "accept": "*/*",
+                     "x-client-version": "iOS/FirebaseSDK/9.6.0/FirebaseCore-iOS",
+                     "x-ios-bundle-identifier": "AlexisBarreyat.BeReal",
+                     "accept-language": "en",
+                     "user-agent":
+                     "FirebaseAuth.iOS/9.6.0 AlexisBarreyat.BeReal/0.31.0 iPhone/14.7.1 hw/iPhone9_1",
+                     "x-firebase-locale": "en",
+                     "x-firebase-gmpid": "1:405768487586:ios:28c4df089ca92b89"
+                     })
+        if not firstRes.is_success:
+            raise Exception(firstRes.content)
+        firstResData = firstRes.json()
+        receipt = firstResData["receipt"]
+        # Second request to get the session
+        secondData = json.dumps({"phoneNumber": phone, "iosReceipt": receipt})
+        secondRes = self.client.post(
+            "https://www.googleapis.com/identitytoolkit/v3/relyingparty/sendVerificationCode?key=" + self.gapi_key,
+            data=secondData,
+            headers={"content-type": "application/json",
+                     "accept": "*/*",
+                     "x-client-version": "iOS/FirebaseSDK/9.6.0/FirebaseCore-iOS",
+                     "x-ios-bundle-identifier": "AlexisBarreyat.BeReal",
+                     "accept-language": "en",
+                     "user-agent":
+                     "FirebaseAuth.iOS/9.6.0 AlexisBarreyat.BeReal/0.31.0 iPhone/14.7.1 hw/iPhone9_1",
+                     "x-firebase-locale": "en",
+                     "x-firebase-gmpid": "1:405768487586:ios:28c4df089ca92b89"
+                     }
         )
-        if not cloudRes.is_success:
-            raise Exception(cloudRes.content)
-        if cloudRes.status_code == 200:
-            responseToJson = json.loads(cloudRes.content)
-            self.otp_session = responseToJson["sessionInfo"]
+        if not secondRes.is_success:
+            raise Exception(secondRes.content)
+        secondResData = secondRes.json()
+        self.otp_session = secondResData["sessionInfo"]
 
     def verify_otp_firebase(self, otp: str) -> None:
         if self.otp_session is None:
             raise Exception("No open otp session (firebase).")
 
         tokenRes = self.client.post(
-            "https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyPhoneNumber",
+            "https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyPhoneNumber?key=" + self.gapi_key,
             params={"key": self.gapi_key},
             data={
                 "sessionInfo": self.otp_session,
@@ -264,6 +287,8 @@ class BeFake:
         self.grant_access_token()
 
     def verify_otp_cloud(self, otp: str) -> None:
+        if self.otp_session is None:
+            raise Exception("No open otp session (vonage).")
         # Request can only accept plain text JSON=> string
         data = json.dumps({
             "code": otp,
@@ -339,7 +364,7 @@ class BeFake:
         self.firebase_expiration = pendulum.now().add(
             seconds=int(res["expires_in"]))
         self.user_id = res["user_id"]
-        #self.save() #Cant save here because we dont have the user_id yet
+        # self.save() #Cant save here because we dont have the user_id yet
 
     def get_account_info(self):
         res = self.client.post("https://www.googleapis.com/identitytoolkit/v3/relyingparty/getAccountInfo",
