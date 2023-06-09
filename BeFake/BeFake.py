@@ -79,7 +79,7 @@ class BeFake:
                    "firebase": {"refresh_token": self.firebase_refresh_token,
                                 "token": self.firebase_token,
                                 "expires": self.firebase_expiration.timestamp()},
-                    "user_id": self.user_id}
+                   "user_id": self.user_id}
 
         if file_path is None:
             file_path = get_default_session_filename()
@@ -99,11 +99,13 @@ class BeFake:
             self.user_id = session["user_id"]
             self.refresh_token = session["access"]["refresh_token"]
             self.token = session["access"]["token"]
-            self.expiration = pendulum.from_timestamp(session["access"]["expires"])
+            self.expiration = pendulum.from_timestamp(
+                session["access"]["expires"])
 
             self.firebase_refresh_token = session["firebase"]["refresh_token"]
             self.firebase_token = session["firebase"]["token"]
-            self.firebase_expiration = pendulum.from_timestamp(session["firebase"]["expires"])
+            self.firebase_expiration = pendulum.from_timestamp(
+                session["firebase"]["expires"])
 
             if pendulum.now().add(minutes=3) >= self.expiration:
                 self.refresh_tokens()
@@ -111,7 +113,7 @@ class BeFake:
             if pendulum.now().add(minutes=3) >= self.firebase_expiration:
                 self.firebase_refresh_tokens()
 
-    def legacy_load(self): # DEPRECATED, use this once to convert to new token
+    def legacy_load(self):  # DEPRECATED, use this once to convert to new token
         if os.environ.get('IS_DOCKER', False):
             file_path = '/data/token.txt'
 
@@ -191,15 +193,60 @@ class BeFake:
             raise Exception(vonageRes.content)
         if vonageRes.json()["status"] != '0':
             print("WARNING: " + vonageRes.json()["errorText"])
-            print("If you already received a code before, ignore the warning and enter it.")    
+            print(
+                "If you already received a code before, ignore the warning and enter it.")
         self.otp_session = vonageRes.json()["vonageRequestId"]
+
+    def send_otp_cloud(self, phone: str) -> None:
+        self.phone = phone
+        # First request to get receip token
+        firstData = {"appToken": "54F80A258C35A916B38A3AD83CA5DDD48A44BFE2461F90831E0F97EBA4BB2EC7"}
+        firstRes = self.client.post(
+            "https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyClient",
+            params={"key": self.gapi_key},
+            json=firstData,
+            headers={"content-type": "application/json",
+                     "accept": "*/*",
+                     "x-client-version": "iOS/FirebaseSDK/9.6.0/FirebaseCore-iOS",
+                     "x-ios-bundle-identifier": "AlexisBarreyat.BeReal",
+                     "accept-language": "en",
+                     "user-agent":
+                     "FirebaseAuth.iOS/9.6.0 AlexisBarreyat.BeReal/0.31.0 iPhone/14.7.1 hw/iPhone9_1",
+                     "x-firebase-locale": "en",
+                     "x-firebase-gmpid": "1:405768487586:ios:28c4df089ca92b89"
+                     })
+        if not firstRes.is_success:
+            raise Exception(firstRes.content)
+        firstResData = firstRes.json()
+        receipt = firstResData["receipt"]
+        # Second request to get the session
+        secondData = {"phoneNumber": phone, "iosReceipt": receipt}
+        secondRes = self.client.post(
+            "https://www.googleapis.com/identitytoolkit/v3/relyingparty/sendVerificationCode",
+            params={"key": self.gapi_key},
+            json=secondData,
+            headers={"content-type": "application/json",
+                     "accept": "*/*",
+                     "x-client-version": "iOS/FirebaseSDK/9.6.0/FirebaseCore-iOS",
+                     "x-ios-bundle-identifier": "AlexisBarreyat.BeReal",
+                     "accept-language": "en",
+                     "user-agent":
+                     "FirebaseAuth.iOS/9.6.0 AlexisBarreyat.BeReal/0.31.0 iPhone/14.7.1 hw/iPhone9_1",
+                     "x-firebase-locale": "en",
+                     "x-firebase-gmpid": "1:405768487586:ios:28c4df089ca92b89"
+                     }
+        )
+        if not secondRes.is_success:
+            raise Exception(secondRes.content)
+        secondResData = secondRes.json()
+        self.otp_session = secondResData["sessionInfo"]
 
     def verify_otp_firebase(self, otp: str) -> None:
         if self.otp_session is None:
             raise Exception("No open otp session (firebase).")
 
         tokenRes = self.client.post(
-            "https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyPhoneNumber",
+            "https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyPhoneNumber?key=" + self.gapi_key,
             params={"key": self.gapi_key},
             data={
                 "sessionInfo": self.otp_session,
@@ -214,7 +261,6 @@ class BeFake:
         self.firebase_refresh_tokens()
         self.grant_access_token()
 
-
     def verify_otp_vonage(self, otp: str) -> None:
         if self.otp_session is None:
             raise Exception("No open otp session (vonage).")
@@ -223,20 +269,46 @@ class BeFake:
             "vonageRequestId": self.otp_session
         })
         if not vonageRes.is_success:
-            print("Error: " + str(vonageRes.json()["statusCode"]) + vonageRes.json()["message"])
+            print("Error: " + str(vonageRes.json()
+                  ["statusCode"]) + vonageRes.json()["message"])
             print("Make sure you entered the right code")
         vonageRes = vonageRes.json()
         idTokenRes = self.client.post("https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyCustomToken",
                                       params={"key": self.gapi_key}, json={
-                "token": vonageRes["token"],
-                "returnSecureToken": True
-            })
+                                          "token": vonageRes["token"],
+                                          "returnSecureToken": True
+                                      })
         if not idTokenRes.is_success:
             raise Exception(idTokenRes.content)
 
         idTokenRes = idTokenRes.json()
 
         self.firebase_refresh_token = idTokenRes["refreshToken"]
+        self.firebase_refresh_tokens()
+        self.grant_access_token()
+
+    def verify_otp_cloud(self, otp: str) -> None:
+        if self.otp_session is None:
+            raise Exception("No open otp session (vonage).")
+        # Request can only accept plain text JSON=> string
+        data = {
+            "code": otp,
+            "sessionInfo": self.otp_session,
+            "operation": "SIGN_UP_OR_IN"
+        }
+        apiUrl = "https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyPhoneNumber"
+        VerificationRes = self.client.post(
+            apiUrl,
+            params={"key": self.gapi_key},
+            headers={
+                "content-Type": "application/json",
+            },
+            json=data
+        )
+        if not VerificationRes.is_success:
+            raise Exception(VerificationRes.content)
+        VerificationRes = VerificationRes.json()
+        self.firebase_refresh_token = VerificationRes["refreshToken"]
         self.firebase_refresh_tokens()
         self.grant_access_token()
 
@@ -257,7 +329,8 @@ class BeFake:
 
         res = res.json()
         self.token = res["access_token"]
-        self.token_info = json.loads(b64decode(res["access_token"].split(".")[1] + '=='))
+        self.token_info = json.loads(
+            b64decode(res["access_token"].split(".")[1] + '=='))
         self.refresh_token = res["refresh_token"]
         self.expiration = pendulum.now().add(seconds=int(res["expires_in"]))
         self.save()
@@ -275,23 +348,25 @@ class BeFake:
         res = res.json()
 
         self.token = res["access_token"]
-        self.token_info = json.loads(b64decode(res["access_token"].split(".")[1] + '=='))
+        self.token_info = json.loads(
+            b64decode(res["access_token"].split(".")[1] + '=='))
         self.refresh_token = res["refresh_token"]
         self.expiration = pendulum.now().add(seconds=int(res["expires_in"]))
 
     def firebase_refresh_tokens(self) -> None:
         res = self.client.post("https://securetoken.googleapis.com/v1/token", params={"key": self.gapi_key},
-                                    data={"grantType": "refresh_token",
-                                          "refreshToken": self.firebase_refresh_token
-                                          })
+                               data={"grantType": "refresh_token",
+                                     "refreshToken": self.firebase_refresh_token
+                                     })
         if not res.is_success:
             raise Exception(res.content)
         res = res.json()
         self.firebase_refresh_token = res["refresh_token"]
         self.firebase_token = res["id_token"]
-        self.firebase_expiration = pendulum.now().add(seconds=int(res["expires_in"]))
+        self.firebase_expiration = pendulum.now().add(
+            seconds=int(res["expires_in"]))
         self.user_id = res["user_id"]
-        self.save()
+        # self.save() #Cant save here because we dont have the user_id yet
 
     def get_account_info(self):
         res = self.client.post("https://www.googleapis.com/identitytoolkit/v3/relyingparty/getAccountInfo",
@@ -369,14 +444,16 @@ class BeFake:
 
     def get_friend_suggestions(self, next=None):
         if next:
-            res = self.api_request("get", f"relationships/suggestions", params={"page": next})
+            res = self.api_request(
+                "get", f"relationships/suggestions", params={"page": next})
         else:
             res = self.api_request("get", f"relationships/suggestions")
 
         return [User(suggestion, self) for suggestion in res["data"]], res["next"]
 
     def get_friend_requests(self, req_type: str):
-        res = self.api_request("get", f"relationships/friend-requests/{req_type}")
+        res = self.api_request(
+            "get", f"relationships/friend-requests/{req_type}")
         return [User(user, self) for user in res["data"]]
 
     def get_sent_friend_requests(self):
@@ -386,7 +463,8 @@ class BeFake:
         return self.get_friend_requests("received")
 
     def remove_friend_request(self, userId):
-        res = self.api_request("patch", f"relationships/friend-requests/{userId}", data={"status": "cancelled"})
+        res = self.api_request(
+            "patch", f"relationships/friend-requests/{userId}", data={"status": "cancelled"})
         return User(res, self)
 
     def get_users_by_phone_numbers(self, phone_numbers):
@@ -422,7 +500,8 @@ class BeFake:
         return res
 
     def change_caption(self, caption: str):
-        res = self.api_request("patch", f"content/posts/caption", data={"caption": caption})
+        res = self.api_request(
+            "patch", f"content/posts/caption", data={"caption": caption})
         return res
 
     def upload(self, data: bytes):  # Broken?
@@ -446,7 +525,8 @@ class BeFake:
         data = {
             "content": comment,
         }
-        res = self.api_request("post", "content/comments", params=payload, data=data)
+        res = self.api_request("post", "content/comments",
+                               params=payload, data=data)
         return res
 
     def delete_comment(self, post_id, comment_id):
@@ -456,7 +536,8 @@ class BeFake:
         data = {
             "commentIds": comment_id,
         }
-        res = self.api_request("delete", "content/comments", params=payload, data=data)
+        res = self.api_request(
+            "delete", "content/comments", params=payload, data=data)
         return res
 
     def upload_realmoji(self, image_file: bytes, emoji_type: str):
@@ -547,7 +628,8 @@ class BeFake:
         return res
 
     def search_username(self, username: str):
-        res = self.api_request("get", f"search/profile", params={"query": username})
+        res = self.api_request("get", f"search/profile",
+                               params={"query": username})
         return [User(user, self) for user in res["data"]]
 
     def get_settings(self):
@@ -560,14 +642,18 @@ class BeFake:
 
     def set_terms(self, code: str, choice: bool):
         if choice:
-            res = self.api_request("put", f"terms/{code}", data={"status": "ACCEPTED"})
+            res = self.api_request(
+                "put", f"terms/{code}", data={"status": "ACCEPTED"})
         else:
-            res = self.api_request("put", f"terms/{code}", data={"status": "DECLINED"})
+            res = self.api_request(
+                "put", f"terms/{code}", data={"status": "DECLINED"})
         return res
 
     def set_profile_picture(self, picture: bytes):
-        payload = {'upload-file': ('profile-picture.webp', picture, 'image/webp')}
-        res = self.api_request("put", f"person/me/profile-picture", files=payload)
+        payload = {
+            'upload-file': ('profile-picture.webp', picture, 'image/webp')}
+        res = self.api_request(
+            "put", f"person/me/profile-picture", files=payload)
         return res
 
     def remove_profile_picture(self):

@@ -3,6 +3,7 @@
 __pycache__
 token.txt
 feeds
+.vscode
 
 data/
 
