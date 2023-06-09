@@ -200,11 +200,11 @@ class BeFake:
     def send_otp_cloud(self, phone: str) -> None:
         self.phone = phone
         # First request to get receip token
-        firstData = json.dumps(
-            {"appToken": "54F80A258C35A916B38A3AD83CA5DDD48A44BFE2461F90831E0F97EBA4BB2EC7"})
+        firstData = {"appToken": "54F80A258C35A916B38A3AD83CA5DDD48A44BFE2461F90831E0F97EBA4BB2EC7"}
         firstRes = self.client.post(
-            "https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyClient?key=" + self.gapi_key,
-            data=firstData,
+            "https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyClient",
+            params={"key": self.gapi_key},
+            json=firstData,
             headers={"content-type": "application/json",
                      "accept": "*/*",
                      "x-client-version": "iOS/FirebaseSDK/9.6.0/FirebaseCore-iOS",
@@ -220,10 +220,11 @@ class BeFake:
         firstResData = firstRes.json()
         receipt = firstResData["receipt"]
         # Second request to get the session
-        secondData = json.dumps({"phoneNumber": phone, "iosReceipt": receipt})
+        secondData = {"phoneNumber": phone, "iosReceipt": receipt}
         secondRes = self.client.post(
-            "https://www.googleapis.com/identitytoolkit/v3/relyingparty/sendVerificationCode?key=" + self.gapi_key,
-            data=secondData,
+            "https://www.googleapis.com/identitytoolkit/v3/relyingparty/sendVerificationCode",
+            params={"key": self.gapi_key},
+            json=secondData,
             headers={"content-type": "application/json",
                      "accept": "*/*",
                      "x-client-version": "iOS/FirebaseSDK/9.6.0/FirebaseCore-iOS",
@@ -290,18 +291,19 @@ class BeFake:
         if self.otp_session is None:
             raise Exception("No open otp session (vonage).")
         # Request can only accept plain text JSON=> string
-        data = json.dumps({
+        data = {
             "code": otp,
             "sessionInfo": self.otp_session,
             "operation": "SIGN_UP_OR_IN"
-        })
-        apiUrl = f"https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyPhoneNumber?key=" + self.gapi_key
+        }
+        apiUrl = "https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyPhoneNumber"
         VerificationRes = self.client.post(
             apiUrl,
+            params={"key": self.gapi_key},
             headers={
                 "content-Type": "application/json",
             },
-            data=data
+            json=data
         )
         if not VerificationRes.is_success:
             raise Exception(VerificationRes.content)
