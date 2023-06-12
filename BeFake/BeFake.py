@@ -617,7 +617,7 @@ class BeFake:
         json_data = {
             "emoji": emojis[emoji_type]
         }
-        res = self.api_request("put", f"/content/realmojis", params=payload,
+        res = self.api_request("put", f"content/realmojis", params=payload,
                                json=json_data)
         return res
 
