@@ -14,8 +14,13 @@ from .models.realmoji_picture import RealmojiPicture
 
 from .models.post import Post, FOFPost
 from .models.memory import Memory
+from .models.memory_v1 import Memory_v1
 from .models.user import User
 
+try:
+    import rich_click as click
+except ImportError:
+    import click
 
 def _get_config_dir() -> str:
     """Source: Instaloader (MIT License)
@@ -411,6 +416,26 @@ class BeFake:
     def get_memories_feed(self):
         res = self.api_request("get", "feeds/memories")
         return [Memory(mem, self) for mem in res["data"]]
+
+    def get_memoriesv1_feed(self):
+        res = self.api_request("get", "feeds/memories-v1")
+        memories = [Memory_v1(mem, self) for mem in res["data"]]
+        newMemories = []
+
+        click.echo("Requesting all memories' posts")
+
+        # get all posts from the memories and append to new list
+        for mem in memories:
+            click.echo(f"Requesting posts by {mem.memory_day}".ljust(50, " ") + mem.id)
+
+            if mem.num_posts_for_moment != 1 and not mem.moment_Id.startswith("brm-"):
+                postsRequest = self.api_request("get", f"feeds/memories-v1/{mem.moment_Id}")
+                for post in postsRequest["posts"]:
+                    newMemories.append(Memory(post, self))
+            else: 
+                newMemories.append(Memory(mem.data_dict, self))
+
+        return newMemories
 
     def delete_memory(self, memory_id: str):
         res = self.api_request("delete", f"memories/{memory_id}")
