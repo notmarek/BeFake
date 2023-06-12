@@ -109,7 +109,7 @@ def refresh(bf):
 
 
 @cli.command(help="Download a feed")
-@click.argument("feed_id", type=click.Choice(["friends", "friends-v1", "friends-of-friends", "discovery", "memories"]))
+@click.argument("feed_id", type=click.Choice(["friends", "friends-v1", "friends-of-friends", "discovery", "memories", "memories-v1"]))
 @click.option("--save-location", help="The paths where the posts should be downloaded")
 @click.option("--realmoji-location", help="The paths where the (non-instant) realmojis should be downloaded")
 @click.option("--instant-realmoji-location", help="The paths where the instant realmojis should be downloaded")
@@ -127,12 +127,16 @@ def feed(bf, feed_id, save_location, realmoji_location, instant_realmoji_locatio
         feed = bf.get_memories_feed()
     elif feed_id == "friends-v1":
         feed = bf.get_friendsv1_feed()
+    elif feed_id == "memories-v1":
+        feed = bf.get_memoriesv1_feed()
 
     # Add fallback location for save_location and realmoji_location parameters if they were not specified by the user.
     # These strings will get formatted later, that's why the "f" is missing before the strings.
     if save_location is None:
         if feed_id == "memories":
             save_location = f"{DATA_DIR}" + "/feeds/memories/{date}"
+        elif feed_id == "memories-v1":
+            save_location = f"{DATA_DIR}" + "/feeds/memories-v1/{date}/{post_id}"
         elif feed_id == "friends-v1":
             save_location = f"{DATA_DIR}" + "/feeds/{feed_id}/{user}/{notification_id}/{post_id}"
         else:
@@ -154,6 +158,16 @@ def feed(bf, feed_id, save_location, realmoji_location, instant_realmoji_locatio
         if feed_id == "memories":
             click.echo("saving memory {}".format(item.memory_day))
             _save_location = save_location.format(date=item.memory_day)
+            os.makedirs(f"{_save_location}", exist_ok=True)
+
+            with open(f"{_save_location}/info.json", "w+") as f:
+                f.write(json.dumps(item.data_dict, indent=4))
+            item.primary_photo.download(f"{_save_location}/primary")
+            item.secondary_photo.download(f"{_save_location}/secondary")
+
+        elif feed_id == "memories-v1":
+            click.echo("saving memory {}".format(item.memory_day).ljust(50, " ") + item.id)
+            _save_location = save_location.format(date=item.memory_day, post_id=item.id)
             os.makedirs(f"{_save_location}", exist_ok=True)
 
             with open(f"{_save_location}/info.json", "w+") as f:
