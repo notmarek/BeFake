@@ -183,10 +183,10 @@ def feed(bf, feed_id, save_location, realmoji_location, instant_realmoji_locatio
                                                   post_id=post.id, notification_id=item.notification_id)
                 os.makedirs(f"{_save_location}", exist_ok=True)
 
-                with open(f"{_save_location}/info.json", "w+") as f:
+                with open(f"{_save_location}info.json", "w+") as f:
                     f.write(json.dumps(post.data_dict, indent=4))
-                post.primary_photo.download(f"{_save_location}/primary")
-                post.secondary_photo.download(f"{_save_location}/secondary")
+                post.primary_photo.download(f"{_save_location}primary")
+                post.secondary_photo.download(f"{_save_location}secondary")
                 for emoji in post.realmojis:
                     # Differenciate between instant and non-instant realomji locations
                     _realmoji_location = instant_realmoji_location if emoji.type == 'instant' else realmoji_location
