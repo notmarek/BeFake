@@ -115,7 +115,7 @@ def refresh(bf):
 @click.option("--instant-realmoji-location", help="The paths where the instant realmojis should be downloaded")
 @load_bf
 def feed(bf, feed_id, save_location, realmoji_location, instant_realmoji_location):
-    date_format = 'YYYY-MM-DD_HH-mm-ss'
+    date_format = 'YYYY-MM-DD'
 
     if feed_id == "friends":
         feed = bf.get_friends_feed()
@@ -138,19 +138,19 @@ def feed(bf, feed_id, save_location, realmoji_location, instant_realmoji_locatio
         elif feed_id == "memories-v1":
             save_location = f"{DATA_DIR}" + "/feeds/memories-v1/{date}/{post_id}"
         elif feed_id == "friends-v1":
-            save_location = f"{DATA_DIR}" + "/feeds/{feed_id}/{user}/{notification_id}/{post_id}"
+            save_location = f"{DATA_DIR}" + "/feeds/{feed_id}/{date}/{user}/{notification_id}/{post_id}"
         else:
-            save_location = f"{DATA_DIR}" + "/feeds/{feed_id}/{user}/{post_id}"
+            save_location = f"{DATA_DIR}" + "/feeds/{feed_id}/{date}/{user}/{post_id}"
 
     if realmoji_location is None:
         if feed_id == "friends-v1":
             realmoji_location = \
                 f"{DATA_DIR}" + \
-                "/feeds/{feed_id}/{post_user}/{notification_id}/{post_id}/reactions/{type}/{user}"
+                "/feeds/{feed_id}/{post_date}/{post_user}/{notification_id}/{post_id}/reactions/{type}/{user}"
         else:
             realmoji_location = \
                 f"{DATA_DIR}" + \
-                "/feeds/{feed_id}/{post_user}/{post_id}/reactions/{type}/{user}"
+                "/feeds/{feed_id}/{post_date}/{post_user}/{post_id}/reactions/{type}/{user}"
 
     instant_realmoji_location = realmoji_location if instant_realmoji_location is None else instant_realmoji_location
 
